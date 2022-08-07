@@ -1,47 +1,63 @@
+import argparse
 import os
 import time
-
 import numpy as np
 import torch
 import torch.optim as optim
+
 from torch.utils.data import DataLoader
 from torchvision.models import vision_transformer
 from tqdm import tqdm
 
 from data.dataset import PneumoniaDetectionDataset
 
+
+def parseArgs():
+    p = argparse.ArgumentParser()
+
+    p.add_argument("--data", help="Path to data parent directory", required=True)
+    p.add_argument("--batch_size", type=int, help="Batch-size to train with", default=4)
+    p.add_argument("--device", default="cuda", help="Device to use for training")
+    p.add_argument("--img_size", default=224, help="Image size to train the model at")
+    p.add_argument("--epochs", default=50, help="Number of epochs to train for")
+    p.add_argument("--val_freq", default=10, help="How many epochs between validations")
+    p.add_argument("--save_frequency", default=10, help="How many epochs between model save")
+    p.add_argument("--save_dir", default="checkpoints", help="Location of where to save model")
+    p.add_argument("--load_model", type=str, default=None,
+                   help="Location of where the model you want to load is stored")
+    args = p.parse_args()
+    return args
+
+
 if __name__ == '__main__':
 
-    # REQUIRED PARAMS
+    args = parseArgs()
 
-    datasetParentDir = r""
-    batchSize = 2
-    device = "cuda:0"
-    imgSize = 16 * 18
+    if not os.path.exists(args.save_dir):
+        os.mkdir(args.save_dir)
 
-    # todo
-    epochs = 50
-    valFreq = 20
-
-    testSet = PneumoniaDetectionDataset(os.path.join(datasetParentDir, "test"), imgSize=imgSize)
-    trainSet = PneumoniaDetectionDataset(os.path.join(datasetParentDir, "train"), imgSize=imgSize)
-    valSet = PneumoniaDetectionDataset(os.path.join(datasetParentDir, "val"), imgSize=imgSize)
+    testSet = PneumoniaDetectionDataset(os.path.join(args.data, "test"), imgSize=args.img_size)
+    trainSet = PneumoniaDetectionDataset(os.path.join(args.data, "train"), imgSize=args.img_size)
+    valSet = PneumoniaDetectionDataset(os.path.join(args.data, "val"), imgSize=args.img_size)
     # Setup datasets
 
     print(f"Found the following number of images:\nTrain: {len(trainSet)}\nVal: {len(valSet)}\nTest: {len(testSet)}")
 
     # Setup dataloaders
 
-    trainSetDataLoader = DataLoader(trainSet, batch_size=batchSize,
+    trainSetDataLoader = DataLoader(trainSet, batch_size=args.batch_size,
                                     shuffle=True, num_workers=2)
-    valSetDataLoader = DataLoader(valSet, batch_size=batchSize,
+    valSetDataLoader = DataLoader(valSet, batch_size=args.batch_size,
                                   shuffle=True, num_workers=2)
-    testSetDataLoader = DataLoader(testSet, batch_size=batchSize,
+    testSetDataLoader = DataLoader(testSet, batch_size=args.batch_size,
                                    shuffle=False, num_workers=2)
 
     # Load model
-    model = vision_transformer.vit_b_16(num_classes=2, image_size=imgSize)
-    model.to(device)
+    model = vision_transformer.vit_b_16(num_classes=2, image_size=args.img_size)
+    if args.load_model and os.path.exists(args.load_model):
+        model.load_state_dict(torch.load(args.load_model))
+        print(f"Loaded {args.load_model}")
+    model.to(args.device)
     model.train()
 
     criterion = torch.nn.CrossEntropyLoss()
@@ -65,8 +81,8 @@ if __name__ == '__main__':
         model.eval()
         for data in tqdm(dataLoader):
             batch, label = data['image'], data['class']
-            batch = batch.to(device)
-            label = label.to(device)
+            batch = batch.to(args.device)
+            label = label.to(args.device)
             optimizer.zero_grad()
 
             # Use AMP/fp16
@@ -79,15 +95,14 @@ if __name__ == '__main__':
         return correct / len(dataLoader.dataset)
 
 
-    print(f"Starting train sequence for {epochs} epochs!")
-    for epoch in range(epochs):
+    print(f"Starting train sequence for {args.epochs} epochs!")
+    for epoch in range(1, args.epochs + 1, 1):
         print(f"Starting epoch {epoch}")
-        running_loss = 0.0
         time.sleep(1)
         for data in tqdm(trainSetDataLoader):
             batch, label = data['image'], data['class']
-            batch = batch.to(device)
-            label = label.to(device)
+            batch = batch.to(args.device)
+            label = label.to(args.device)
             optimizer.zero_grad()
 
             # Use AMP/fp16
@@ -101,9 +116,15 @@ if __name__ == '__main__':
             scaler.step(optimizer)
             scaler.update()
 
-        torch.save(model.state_dict(), "Model.pth")
-        accuracy = evalModel(valSetDataLoader)
-        print(f"Accuracy after validation is {accuracy}%")
-        accuracy = evalModel(testSetDataLoader)
-        print(f"Accuracy after test is {accuracy}%")
+        if args.val_freq % epoch == 0:
+            accuracy = evalModel(valSetDataLoader)
+            print(f"Accuracy after validation is {accuracy*100}%")
+            accuracy = evalModel(
+                testSetDataLoader)  # Grouping test set here since validation set is much smaller, test set not used for any hyper-param optimizations
+            print(f"Accuracy after test is {accuracy*100}%")
+
+        if args.save_frequency % epoch == 0:
+            saveDir = os.path.join(args.save_dir, "Model.pth")
+            torch.save(model.state_dict(), saveDir)
+            print(f"Saved Model to {saveDir}")
     print('Finished Training')
