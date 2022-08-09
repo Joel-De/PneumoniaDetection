@@ -8,7 +8,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from torchvision.models import vision_transformer
 from tqdm import tqdm
-
+from torch.optim.lr_scheduler import StepLR
 from data.dataset import PneumoniaDetectionDataset
 
 
@@ -19,12 +19,13 @@ def parseArgs():
     p.add_argument("--batch_size", type=int, help="Batch-size to train with", default=4)
     p.add_argument("--device", default="cuda", help="Device to use for training")
     p.add_argument("--img_size", default=224, help="Image size to train the model at")
-    p.add_argument("--epochs", default=50, help="Number of epochs to train for")
+    p.add_argument("--epochs", default=60, help="Number of epochs to train for")
     p.add_argument("--val_freq", default=10, help="How many epochs between validations")
     p.add_argument("--save_frequency", default=10, help="How many epochs between model save")
     p.add_argument("--save_dir", default="checkpoints", help="Location of where to save model")
     p.add_argument("--load_model", type=str, default=None,
                    help="Location of where the model you want to load is stored")
+    p.add_argument("--lr_step_size", type=int, default=30, help="How often to decay learning rate")
     args = p.parse_args()
     return args
 
@@ -63,6 +64,7 @@ if __name__ == '__main__':
     criterion = torch.nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
     scaler = torch.cuda.amp.GradScaler()
+    scheduler = StepLR(optimizer, args.lr_step_size,gamma=0.1)
 
     time.sleep(1)
     iterCount = 0
@@ -115,6 +117,9 @@ if __name__ == '__main__':
             scaler.scale(loss_).backward()
             scaler.step(optimizer)
             scaler.update()
+
+        #Update learning rate
+        scheduler.step()
 
         if epoch % args.val_freq == 0:
             accuracy = evalModel(valSetDataLoader)

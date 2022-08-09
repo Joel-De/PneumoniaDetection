@@ -7,14 +7,11 @@ import torchvision
 from PIL import Image
 from torch.utils.data import Dataset
 
-
 class PneumoniaDetectionDataset(Dataset):
     def __init__(self, rootDir: Union[str, Path], imgSize=224, transform=None):
         """
         :param rootDir: Directory of root dataset
-        :type rootDir: Str|Path
-        :param transform:
-        :type transform:
+        :param transform:#NOT IMPLEMENTED
         """
         self.rootDir = rootDir
 
@@ -26,20 +23,23 @@ class PneumoniaDetectionDataset(Dataset):
         self.transform = transform
         self.imgSize = imgSize
 
-
     @staticmethod
-    def getClassMap():
+    def getClassMap() -> dict:
         return {0: 'Normal', 1: "Pneumonia"}
 
     @staticmethod
-    def basicPreprocess(imgSize):
+    def basicPreprocess(imgSize: int) -> torchvision.transforms:
+        """
+        :param imgSize: Size of desired output image
+        :return: Torchvision transform module
+        """
         return torchvision.transforms.Compose(
             [torchvision.transforms.ToTensor(), torchvision.transforms.Resize((imgSize, imgSize))])
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.combinedImages)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int) -> dict[str:torch.Tensor]:
         img = Image.open(self.combinedImages[idx][0]).convert('RGB')
         if self.transform:
             img = self.transform(img)
@@ -55,6 +55,6 @@ class PneumoniaDetectionDataset(Dataset):
 
 
 if __name__ == '__main__':
-    dat = PneumoniaDetectionDataset(r"")
+    dat = PneumoniaDetectionDataset(r"../chest_xray/test")
     print(dat.__len__())
-    print(dat.__getitem__(3000)['image'].size)
+    print(dat.__getitem__(200)['image'].size)
