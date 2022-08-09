@@ -1,10 +1,10 @@
 import argparse
 import os
 import time
+
 import numpy as np
 import torch
 import torch.optim as optim
-
 from torch.utils.data import DataLoader
 from torchvision.models import vision_transformer
 from tqdm import tqdm
@@ -55,7 +55,7 @@ if __name__ == '__main__':
     # Load model
     model = vision_transformer.vit_b_16(num_classes=2, image_size=args.img_size)
     if args.load_model and os.path.exists(args.load_model):
-        model.load_state_dict(torch.load(args.load_model))
+        model.load_state_dict(torch.load(args.load_model)["model"])
         print(f"Loaded {args.load_model}")
     model.to(args.device)
     model.train()
@@ -116,15 +116,19 @@ if __name__ == '__main__':
             scaler.step(optimizer)
             scaler.update()
 
-        if args.val_freq % epoch == 0:
+        if epoch % args.val_freq == 0:
             accuracy = evalModel(valSetDataLoader)
-            print(f"Accuracy after validation is {accuracy*100}%")
+            print(f"Accuracy after validation is {accuracy * 100}%")
             accuracy = evalModel(
                 testSetDataLoader)  # Grouping test set here since validation set is much smaller, test set not used for any hyper-param optimizations
-            print(f"Accuracy after test is {accuracy*100}%")
+            print(f"Accuracy after test is {accuracy * 100}%")
 
-        if args.save_frequency % epoch == 0:
+        if epoch % args.save_frequency == 0:
             saveDir = os.path.join(args.save_dir, "Model.pth")
-            torch.save(model.state_dict(), saveDir)
+            modelDict = {
+                "model": model.state_dict(),
+                "imgSize": args.img_size
+            }
+            torch.save(modelDict, saveDir)
             print(f"Saved Model to {saveDir}")
     print('Finished Training')

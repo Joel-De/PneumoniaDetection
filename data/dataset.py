@@ -24,12 +24,17 @@ class PneumoniaDetectionDataset(Dataset):
                                  os.listdir(os.path.join(self.rootDir, "PNEUMONIA"))]
         self.combinedImages = [[img, 0] for img in self.imgListNormal] + [[img, 1] for img in self.imgListPneumonia]
         self.transform = transform
-        self.basicTransform = torchvision.transforms.Compose(
-            [torchvision.transforms.ToTensor(), torchvision.transforms.Resize((imgSize, imgSize))])
+        self.imgSize = imgSize
+
 
     @staticmethod
     def getClassMap():
         return {0: 'Normal', 1: "Pneumonia"}
+
+    @staticmethod
+    def basicPreprocess(imgSize):
+        return torchvision.transforms.Compose(
+            [torchvision.transforms.ToTensor(), torchvision.transforms.Resize((imgSize, imgSize))])
 
     def __len__(self):
         return len(self.combinedImages)
@@ -39,7 +44,7 @@ class PneumoniaDetectionDataset(Dataset):
         if self.transform:
             img = self.transform(img)
 
-        img = self.basicTransform(img)
+        img = self.basicPreprocess(self.imgSize)(img)
         img = img.type(torch.FloatTensor)
 
         imgClass = [0, 0]
