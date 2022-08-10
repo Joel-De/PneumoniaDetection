@@ -12,11 +12,10 @@ from torch.optim.lr_scheduler import StepLR
 from data.dataset import PneumoniaDetectionDataset
 
 
+
 def parseArgs():
     p = argparse.ArgumentParser()
-
     p.add_argument("--data", help="Path to data parent directory", required=True)
-    p.add_argument("--batch_size", type=int, help="Batch-size to train with", default=4)
     p.add_argument("--device", default="cuda", help="Device to use for training")
     p.add_argument("--img_size", default=224, help="Image size to train the model at")
     p.add_argument("--epochs", default=60, help="Number of epochs to train for")
@@ -25,7 +24,13 @@ def parseArgs():
     p.add_argument("--save_dir", default="checkpoints", help="Location of where to save model")
     p.add_argument("--load_model", type=str, default=None,
                    help="Location of where the model you want to load is stored")
+
+    p.add_argument("--batch_size", type=int, help="Batch-size to train with", default=4)
+    p.add_argument("--num_workers", type=int, help="Number of workers to use for dataloading", default=4)
     p.add_argument("--lr_step_size", type=int, default=30, help="How often to decay learning rate")
+    p.add_argument("--lr_gamma", type=float, default=0.1, help="Factor to decrease learning rate by")
+    p.add_argument("--lr", type=float, default=0.001, help="Learning rate to use in training")
+    p.add_argument("--momentum", type=float, default=0.9, help="Momentum of learning rate for ADAM")
     args = p.parse_args()
     return args
 
@@ -47,11 +52,11 @@ if __name__ == '__main__':
     # Setup dataloaders
 
     trainSetDataLoader = DataLoader(trainSet, batch_size=args.batch_size,
-                                    shuffle=True, num_workers=2)
+                                    shuffle=True, num_workers=args.num_workers)
     valSetDataLoader = DataLoader(valSet, batch_size=args.batch_size,
-                                  shuffle=True, num_workers=2)
+                                  shuffle=True, num_workers=args.num_workers)
     testSetDataLoader = DataLoader(testSet, batch_size=args.batch_size,
-                                   shuffle=False, num_workers=2)
+                                   shuffle=False, num_workers=args.num_workers)
 
     # Load model
     model = vision_transformer.vit_b_16(num_classes=2, image_size=args.img_size)
@@ -62,9 +67,9 @@ if __name__ == '__main__':
     model.train()
 
     criterion = torch.nn.CrossEntropyLoss()
-    optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+    optimizer = optim.SGD(model.parameters(), args.lr, momentum=args.momentum)
     scaler = torch.cuda.amp.GradScaler()
-    scheduler = StepLR(optimizer, args.lr_step_size,gamma=0.1)
+    scheduler = StepLR(optimizer, args.lr_step_size,gamma=args.lr_gamma)
 
     time.sleep(1)
     iterCount = 0
@@ -118,7 +123,7 @@ if __name__ == '__main__':
             scaler.step(optimizer)
             scaler.update()
 
-        #Update learning rate
+        # Update learning rate
         scheduler.step()
 
         if epoch % args.val_freq == 0:
