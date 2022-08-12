@@ -112,7 +112,8 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-
+/checkpoints
 *.pth
 .idea/
 /chest_xray
+/tensorboard_runs
