@@ -1,10 +1,10 @@
 import argparse
 import os
 import time
-
 import numpy as np
 import torch
 import tensorboard
+
 from torch import optim
 from torch.utils.data import DataLoader
 from torchvision.models import vision_transformer

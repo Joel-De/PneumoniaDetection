@@ -1,10 +1,9 @@
 import argparse
 import os
-
 import torch
+
 from PIL import Image
 from torchvision.models import vision_transformer
-
 from data.dataset import PneumoniaDetectionDataset
 
 

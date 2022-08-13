@@ -117,3 +117,4 @@ dmypy.json
 .idea/
 /chest_xray
 /tensorboard_runs
+/flask_resources/static/tmp.png

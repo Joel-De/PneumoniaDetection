@@ -1,11 +1,11 @@
 import os
-from pathlib import Path
-from typing import Union
-
 import torch.nn
 import torchvision
+
 from PIL import Image
 from torch.utils.data import Dataset
+from pathlib import Path
+from typing import Union
 
 class PneumoniaDetectionDataset(Dataset):
     def __init__(self, rootDir: Union[str, Path], imgSize=224, transform=None):
