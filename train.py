@@ -15,33 +15,84 @@ from data.dataset import PneumoniaDetectionDataset
 from datetime import datetime
 from statistics import fmean
 
+
 def parseArgs():
     p = argparse.ArgumentParser()
     p.add_argument("--data", help="Path to data parent directory", required=True)
     p.add_argument("--device", default="cuda", help="Device to use for training")
-    p.add_argument("--img_size", default=64, help="Image size to train the model at")
-    p.add_argument("--epochs", default=60, help="Number of epochs to train for")
-    p.add_argument("--val_freq", default=10, help="How many epochs between validations")
-    p.add_argument("--save_frequency", default=10, help="How many epochs between model save")
+    p.add_argument("--img_size", type=int, default=64, help="Image size to train the model at")
+    p.add_argument("--epochs", type=int, default=60, help="Number of epochs to train for")
+    p.add_argument("--val_freq", type=int, default=10, help="How many epochs between validations")
+    p.add_argument("--save_frequency", type=int, default=10, help="How many epochs between model save")
     p.add_argument("--save_dir", default="checkpoints", help="Location of where to save model")
     p.add_argument("--load_model", type=str, default=None,
                    help="Location of where the model you want to load is stored")
     p.add_argument("--batch_size", type=int, help="Batch-size to train with", default=4)
     p.add_argument("--num_workers", type=int, help="Number of workers to use for dataloading", default=4)
-    p.add_argument("--lr_step_size", type=int, default=30, help="How often to decay learning rate")
+    p.add_argument("--lr_step_size", type=int, default=20, help="How often to decay learning rate")
     p.add_argument("--lr_gamma", type=float, default=0.1, help="Factor to decrease learning rate by")
     p.add_argument("--lr", type=float, default=0.001, help="Learning rate to use in training")
     p.add_argument("--momentum", type=float, default=0.9, help="Momentum of learning rate for ADAM")
-    p.add_argument("--name", type=str, default=f"Train_{datetime.now().strftime('%m_%d_%H_%M_%S')}", help="Name to save results under")
+    p.add_argument("--name", type=str, default=f"Train_{datetime.now().strftime('%m_%d_%H_%M_%S')}",
+                   help="Name to save results under")
 
     args = p.parse_args()
     return args
 
 
+def evalModel(model, dataLoader: DataLoader, args):
+    """
+    :param dataLoader: DataLoader instance of the set you wish to evaluate on
+    :type dataLoader: Dataloader
+    :return: Accuracy of model on the data
+    :rtype: float
+    """
+    torch.cuda.empty_cache()
+    time.sleep(1)
+    print("Evaluating Model")
+    correct = 0
+    for data in tqdm(dataLoader):
+        batch, label = data['image'], data['class']
+        batch = batch.to(args.device)
+        label = label.to(args.device)
+        optimizer.zero_grad()
+
+        # Use AMP/fp16
+        with torch.amp.autocast(args.device):
+            with torch.no_grad():
+                loss = model(batch)
+
+        res = loss.cpu().argmax(-1)
+        correct += np.count_nonzero(res == np.argmax(label.cpu(), -1))
+
+    return correct / len(dataLoader.dataset)
+
+
+def trainEpoch(model, dataLoader: DataLoader, optimizer, scaler, args):
+    runningloss = []
+    for data in tqdm(dataLoader):
+        batch, label = data['image'], data['class']
+        batch = batch.to(args.device)
+        label = label.to(args.device)
+        optimizer.zero_grad()
+
+        # Use AMP/fp16
+        with torch.amp.autocast(args.device):
+            loss = model(batch)
+
+        loss = loss.to(torch.float32)
+        loss = criterion(loss, label)
+
+        scaler.scale(loss).backward()
+        scaler.step(optimizer)
+        scaler.update()
+        runningloss.append(loss.item())
+    return runningloss
+
+
 if __name__ == '__main__':
 
     args = parseArgs()
-
     if not os.path.exists(args.save_dir):
         os.mkdir(args.save_dir)
 
@@ -67,11 +118,10 @@ if __name__ == '__main__':
         model.load_state_dict(torch.load(args.load_model)["model"])
         print(f"Loaded {args.load_model}")
 
-
     criterion = torch.nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), args.lr, momentum=args.momentum)
     scaler = torch.cuda.amp.GradScaler()
-    scheduler = StepLR(optimizer, args.lr_step_size,gamma=args.lr_gamma)
+    scheduler = StepLR(optimizer, args.lr_step_size, gamma=args.lr_gamma)
 
     time.sleep(1)
     iterCount = 0
@@ -81,66 +131,27 @@ if __name__ == '__main__':
     url = tensorBoardProgram.launch()
     print(f"Launched Tensorboard server at {url}")
     tensorboardWriter = SummaryWriter(log_dir=f"tensorboard_runs/{args.name}")
-    tensorboardWriter.add_graph(model, torch.zeros((1,3,args.img_size,args.img_size)))
+    # tensorboardWriter.add_graph(model, torch.zeros((1,3,args.img_size,args.img_size)), use_strict_trace=True) # Broken with torch 1.12.1
     model.to(args.device)
     model.train()
-    def evalModel(dataLoader: DataLoader):
-        """
-        :param dataLoader: DataLoader instance of the set you wish to evaluate on
-        :type dataLoader: Dataloader
-        :return: Accuracy of model on the data
-        :rtype: float
-        """
-        time.sleep(1)
-        print("Evaluating Model")
-        correct = 0
-        model.eval()
-        for data in tqdm(dataLoader):
-            batch, label = data['image'], data['class']
-            batch = batch.to(args.device)
-            label = label.to(args.device)
-            optimizer.zero_grad()
-
-            # Use AMP/fp16
-            with torch.cuda.amp.autocast():
-                loss = model(batch)
-
-            res = loss.cpu().argmax(-1)
-            correct += np.count_nonzero(res == np.argmax(label.cpu(), -1))
-
-        return correct / len(dataLoader.dataset)
-
 
     print(f"Starting train sequence for {args.epochs} epochs!")
     for epoch in range(1, args.epochs + 1, 1):
         print(f"Starting epoch {epoch}")
+        torch.cuda.empty_cache()
         time.sleep(1)
-        runningloss = []
-        for data in tqdm(trainSetDataLoader):
-            batch, label = data['image'], data['class']
-            batch = batch.to(args.device)
-            label = label.to(args.device)
-            optimizer.zero_grad()
-
-            # Use AMP/fp16
-            with torch.cuda.amp.autocast():
-                loss = model(batch)
-
-            loss = loss.to(torch.float32)
-            loss_ = criterion(loss, label)
-            runningloss.append(loss_)
-            scaler.scale(loss_).backward()
-            scaler.step(optimizer)
-            scaler.update()
+        runningLoss = trainEpoch(model, trainSetDataLoader, optimizer, scaler, args)
 
         # Update learning rate
         scheduler.step()
 
+        torch.cuda.empty_cache()
+
         if epoch % args.val_freq == 0:
-            accuracy = evalModel(valSetDataLoader)
+            accuracy = evalModel(model, valSetDataLoader, args)
             print(f"Accuracy after validation is {accuracy * 100}%")
-            accuracy = evalModel(
-                testSetDataLoader)  # Grouping test set here since validation set is much smaller, test set not used for any hyper-param optimizations
+            accuracy = evalModel(model,
+                                 testSetDataLoader, args)  # Grouping test set here since validation set is much smaller, test set not used for any hyper-param optimizations
             print(f"Accuracy after test is {accuracy * 100}%")
             tensorboardWriter.add_scalar("Accuracy/Val", accuracy, global_step=epoch)
 
@@ -152,8 +163,7 @@ if __name__ == '__main__':
             }
             torch.save(modelDict, saveDir)
             print(f"Saved Model to {saveDir}")
-        tensorboardWriter.add_scalar("Val/Loss", fmean(runningloss), global_step=epoch)
-
+        tensorboardWriter.add_scalar("Train/Loss", fmean(runningLoss), global_step=epoch)
 
     tensorboardWriter.close()
     print('Finished Training')

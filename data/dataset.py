@@ -14,7 +14,7 @@ class PneumoniaDetectionDataset(Dataset):
         :param transform:#NOT IMPLEMENTED
         """
         self.rootDir = rootDir
-
+        self.maxDatasetLen = None
         self.imgListNormal = [os.path.join(self.rootDir, "NORMAL", fName) for fName in
                               os.listdir(os.path.join(self.rootDir, "NORMAL"))]
         self.imgListPneumonia = [os.path.join(self.rootDir, "PNEUMONIA", fName) for fName in
@@ -37,7 +37,7 @@ class PneumoniaDetectionDataset(Dataset):
             [torchvision.transforms.ToTensor(), torchvision.transforms.Resize((imgSize, imgSize))])
 
     def __len__(self) -> int:
-        return len(self.combinedImages)
+        return min(self.maxDatasetLen, len(self.combinedImages)) if self.maxDatasetLen else len(self.combinedImages)
 
     def __getitem__(self, idx: int) -> dict[str:torch.Tensor]:
         img = Image.open(self.combinedImages[idx][0]).convert('RGB')

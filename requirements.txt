@@ -1,9 +1,9 @@
 -i https://download.pytorch.org/whl/cu113
-tqdm
-pillow
-torch==1.11.0+cu113
-torchvision==0.12.0+cu113
-torchaudio==0.11.0
+torch==1.12.1+cu116
+torchvision==0.13.1+cu116
+torchaudio==0.13.1+cu116
 tensorboard
 opencv-python
 flask
+tqdm
+pillow
