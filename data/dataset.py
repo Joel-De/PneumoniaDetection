@@ -1,6 +1,7 @@
 import os
 import torch.nn
 import torchvision
+import json
 
 from PIL import Image
 from torch.utils.data import Dataset
@@ -8,18 +9,15 @@ from pathlib import Path
 from typing import Union
 
 class PneumoniaDetectionDataset(Dataset):
-    def __init__(self, rootDir: Union[str, Path], imgSize=224, transform=None):
+    def __init__(self, datasetInformationDir: Union[str, Path], imgSize=224, transform=None):
         """
-        :param rootDir: Directory of root dataset
+        :param datasetInformationDir: Directory of root dataset
         :param transform:#NOT IMPLEMENTED
         """
-        self.rootDir = rootDir
+        self.rootDir = os.path.join(datasetInformationDir, "..")
         self.maxDatasetLen = None
-        self.imgListNormal = [os.path.join(self.rootDir, "NORMAL", fName) for fName in
-                              os.listdir(os.path.join(self.rootDir, "NORMAL"))]
-        self.imgListPneumonia = [os.path.join(self.rootDir, "PNEUMONIA", fName) for fName in
-                                 os.listdir(os.path.join(self.rootDir, "PNEUMONIA"))]
-        self.combinedImages = [[img, 0] for img in self.imgListNormal] + [[img, 1] for img in self.imgListPneumonia]
+        with open(datasetInformationDir, 'r') as jsonFile:
+            self.datasetInformation = json.load(jsonFile)
         self.transform = transform
         self.imgSize = imgSize
 
@@ -40,14 +38,14 @@ class PneumoniaDetectionDataset(Dataset):
             [torchvision.transforms.ToTensor(), torchvision.transforms.Resize((imgSize, imgSize))])
 
     def __len__(self) -> int:
-        return min(self.maxDatasetLen, len(self.combinedImages)) if self.maxDatasetLen else len(self.combinedImages)
+        return min(self.maxDatasetLen, len(self.datasetInformation)) if self.maxDatasetLen else len(self.datasetInformation)
 
     def __getitem__(self, idx: int) -> dict[str:torch.Tensor]:
         """
         :param idx: Index of data to use
         :return: Dictionary of image and class label
         """
-        img = Image.open(self.combinedImages[idx][0]).convert('RGB')
+        img = Image.open(os.path.join(self.rootDir, self.datasetInformation[idx]['FilePath'])).convert('RGB')
         if self.transform:
             img = self.transform(img)
 
@@ -55,13 +53,13 @@ class PneumoniaDetectionDataset(Dataset):
         img = img.type(torch.FloatTensor)
 
         imgClass = [0, 0]
-        imgClass[self.combinedImages[idx][1]] = 1
+        imgClass[self.datasetInformation[idx]['Label']] = 1
         imgClass = torch.tensor(imgClass, dtype=torch.float)
         packedData = {'image': img, 'class': imgClass}
         return packedData
 
 
 if __name__ == '__main__':
-    dat = PneumoniaDetectionDataset(r"../chest_xray/test")
+    dat = PneumoniaDetectionDataset(r"F:\PycharmProjects\PneumoniaDetection\data\RSNADataset\Train\datasetInformation.json")
     print(dat.__len__())
-    print(dat.__getitem__(200)['image'].size)
+    print(dat.__getitem__(200)['image'].size())

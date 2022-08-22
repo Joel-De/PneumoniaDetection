@@ -11,7 +11,7 @@ from torch import optim
 from torch.optim.lr_scheduler import StepLR
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
-from torchvision.models import vision_transformer
+from torchvision.models import resnet34
 from tqdm import tqdm
 
 from data.dataset import PneumoniaDetectionDataset
@@ -28,7 +28,7 @@ def parseArgs():
     p.add_argument("--save_dir", default="checkpoints", help="Location of where to save model")
     p.add_argument("--load_model", type=str, default=None,
                    help="Location of where the model you want to load is stored")
-    p.add_argument("--batch_size", type=int, help="Batch-size to train with", default=4)
+    p.add_argument("--batch_size", type=int, help="Batch-size to train with", default=1)
     p.add_argument("--num_workers", type=int, help="Number of workers to use for dataloading", default=4)
     p.add_argument("--lr_step_size", type=int, default=20, help="How often to decay learning rate")
     p.add_argument("--lr_gamma", type=float, default=0.1, help="Factor to decrease learning rate by")
@@ -41,12 +41,12 @@ def parseArgs():
     return args
 
 
-def evalModel(model: vision_transformer, dataLoader: DataLoader, optimizer: torch.optim, args) -> float:
+def evalModel(model: resnet34, dataLoader: DataLoader, optimizer: torch.optim, args) -> float:
     """
     :param model: Model object to train
     :param dataLoader: Dataloader for desired dataset
     :param optimizer: Optimizer in use
-    :param args: Copy of commandline arugments dictionary
+    :param args: Copy of commandline arguments dictionary
     :return: Accuracy of evaluation
     """
     torch.cuda.empty_cache()
@@ -70,14 +70,14 @@ def evalModel(model: vision_transformer, dataLoader: DataLoader, optimizer: torc
     return correct / len(dataLoader.dataset)
 
 
-def trainEpoch(model: vision_transformer, dataLoader: DataLoader, optimizer: torch.optim,
-               scaler: torch.cuda.amp.GradScaler, args) -> float:
+def trainEpoch(model: resnet34, dataLoader: DataLoader, optimizer: torch.optim,
+               scaler: torch.cuda.amp.GradScaler, args) -> list:
     """
     :param model: Model object to train
     :param dataLoader: Dataloader for desired dataset
     :param optimizer: Optimizer in use
     :param scaler: Grad scaler in use
-    :param args: Copy of commandline arugments dictionary
+    :param args: Copy of commandline arguments dictionary
     :return: Running loss of training
     """
     runningloss = []
@@ -107,9 +107,9 @@ if __name__ == '__main__':
     if not os.path.exists(args.save_dir):
         os.mkdir(args.save_dir)
 
-    testSet = PneumoniaDetectionDataset(os.path.join(args.data, "test"), imgSize=args.img_size)
-    trainSet = PneumoniaDetectionDataset(os.path.join(args.data, "train"), imgSize=args.img_size)
-    valSet = PneumoniaDetectionDataset(os.path.join(args.data, "val"), imgSize=args.img_size)
+    testSet = PneumoniaDetectionDataset(os.path.join(args.data, "Test", "datasetInformation.json"), imgSize=args.img_size)
+    trainSet = PneumoniaDetectionDataset(os.path.join(args.data, "Train", "datasetInformation.json"), imgSize=args.img_size)
+    valSet = PneumoniaDetectionDataset(os.path.join(args.data, "Test", "datasetInformation.json"), imgSize=args.img_size)
     # Setup datasets
 
     print(f"Found the following number of images:\nTrain: {len(trainSet)}\nVal: {len(valSet)}\nTest: {len(testSet)}")
@@ -124,7 +124,7 @@ if __name__ == '__main__':
                                    shuffle=False, num_workers=args.num_workers)
 
     # Load model
-    model = vision_transformer.vit_b_16(num_classes=2, image_size=args.img_size)
+    model = resnet34(num_classes=2)
     if args.load_model and os.path.exists(args.load_model):
         model.load_state_dict(torch.load(args.load_model)["model"])
         print(f"Loaded {args.load_model}")
@@ -161,11 +161,11 @@ if __name__ == '__main__':
         if epoch % args.val_freq == 0:
             accuracy = evalModel(model, valSetDataLoader, args)
             print(f"Accuracy after validation is {accuracy * 100}%")
-            accuracy = evalModel(model, testSetDataLoader,
+            accuracy = evalModel(model, testSetDataLoader,optimizer,
                                  args)  # Grouping test set here since validation set is much smaller, test set not used for any hyper-param optimizations
 
-        print(f"Accuracy after test is {accuracy * 100}%")
-        tensorboardWriter.add_scalar("Accuracy/Val", accuracy, global_step=epoch)
+            print(f"Accuracy after test is {accuracy * 100}%")
+            tensorboardWriter.add_scalar("Accuracy/Val", accuracy, global_step=epoch)
 
         if epoch % args.save_frequency == 0:
             saveDir = os.path.join(args.save_dir, f"{args.name}_model.pth")
