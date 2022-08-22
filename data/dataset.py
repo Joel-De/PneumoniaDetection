@@ -25,6 +25,9 @@ class PneumoniaDetectionDataset(Dataset):
 
     @staticmethod
     def getClassMap() -> dict:
+        """
+        :return: Returns dictionary of index -> ID
+        """
         return {0: 'Normal', 1: "Pneumonia"}
 
     @staticmethod
@@ -40,6 +43,10 @@ class PneumoniaDetectionDataset(Dataset):
         return min(self.maxDatasetLen, len(self.combinedImages)) if self.maxDatasetLen else len(self.combinedImages)
 
     def __getitem__(self, idx: int) -> dict[str:torch.Tensor]:
+        """
+        :param idx: Index of data to use
+        :return: Dictionary of image and class label
+        """
         img = Image.open(self.combinedImages[idx][0]).convert('RGB')
         if self.transform:
             img = self.transform(img)

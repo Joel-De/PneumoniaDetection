@@ -1,19 +1,20 @@
 import argparse
 import os
 import time
-import numpy as np
-import torch
-import tensorboard
-
-from torch import optim
-from torch.utils.data import DataLoader
-from torchvision.models import vision_transformer
-from tqdm import tqdm
-from torch.optim.lr_scheduler import StepLR
-from torch.utils.tensorboard import SummaryWriter
-from data.dataset import PneumoniaDetectionDataset
 from datetime import datetime
 from statistics import fmean
+
+import numpy as np
+import tensorboard
+import torch
+from torch import optim
+from torch.optim.lr_scheduler import StepLR
+from torch.utils.data import DataLoader
+from torch.utils.tensorboard import SummaryWriter
+from torchvision.models import vision_transformer
+from tqdm import tqdm
+
+from data.dataset import PneumoniaDetectionDataset
 
 
 def parseArgs():
@@ -40,12 +41,13 @@ def parseArgs():
     return args
 
 
-def evalModel(model, dataLoader: DataLoader, args):
+def evalModel(model: vision_transformer, dataLoader: DataLoader, optimizer: torch.optim, args) -> float:
     """
-    :param dataLoader: DataLoader instance of the set you wish to evaluate on
-    :type dataLoader: Dataloader
-    :return: Accuracy of model on the data
-    :rtype: float
+    :param model: Model object to train
+    :param dataLoader: Dataloader for desired dataset
+    :param optimizer: Optimizer in use
+    :param args: Copy of commandline arugments dictionary
+    :return: Accuracy of evaluation
     """
     torch.cuda.empty_cache()
     time.sleep(1)
@@ -68,7 +70,16 @@ def evalModel(model, dataLoader: DataLoader, args):
     return correct / len(dataLoader.dataset)
 
 
-def trainEpoch(model, dataLoader: DataLoader, optimizer, scaler, args):
+def trainEpoch(model: vision_transformer, dataLoader: DataLoader, optimizer: torch.optim,
+               scaler: torch.cuda.amp.GradScaler, args) -> float:
+    """
+    :param model: Model object to train
+    :param dataLoader: Dataloader for desired dataset
+    :param optimizer: Optimizer in use
+    :param scaler: Grad scaler in use
+    :param args: Copy of commandline arugments dictionary
+    :return: Running loss of training
+    """
     runningloss = []
     for data in tqdm(dataLoader):
         batch, label = data['image'], data['class']
@@ -150,10 +161,11 @@ if __name__ == '__main__':
         if epoch % args.val_freq == 0:
             accuracy = evalModel(model, valSetDataLoader, args)
             print(f"Accuracy after validation is {accuracy * 100}%")
-            accuracy = evalModel(model,
-                                 testSetDataLoader, args)  # Grouping test set here since validation set is much smaller, test set not used for any hyper-param optimizations
-            print(f"Accuracy after test is {accuracy * 100}%")
-            tensorboardWriter.add_scalar("Accuracy/Val", accuracy, global_step=epoch)
+            accuracy = evalModel(model, testSetDataLoader,
+                                 args)  # Grouping test set here since validation set is much smaller, test set not used for any hyper-param optimizations
+
+        print(f"Accuracy after test is {accuracy * 100}%")
+        tensorboardWriter.add_scalar("Accuracy/Val", accuracy, global_step=epoch)
 
         if epoch % args.save_frequency == 0:
             saveDir = os.path.join(args.save_dir, f"{args.name}_model.pth")

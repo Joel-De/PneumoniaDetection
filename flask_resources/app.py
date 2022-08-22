@@ -1,13 +1,13 @@
 import argparse
 import io
-import torch
 
+import torch
 from PIL import Image
 from flask import Flask, render_template
 from flask import request, redirect
 from torchvision.models import vision_transformer
-from data.dataset import PneumoniaDetectionDataset
 
+from data.dataset import PneumoniaDetectionDataset
 
 app = Flask(__name__)
 app.secret_key = b'@VOv3oactreto8yavheE$B^eo'
@@ -19,7 +19,6 @@ def upload_file():
         if 'file' not in request.files:
             print('No file part')
             return redirect(request.url)
-
         file = request.files['file']
         if file.filename == '':
             print('No selected file')
