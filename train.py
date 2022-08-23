@@ -11,7 +11,7 @@ from torch import optim
 from torch.optim.lr_scheduler import StepLR
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
-from torchvision.models import resnet34
+from torchvision.models import resnet101
 from tqdm import tqdm
 
 from data.dataset import PneumoniaDetectionDataset
@@ -23,8 +23,8 @@ def parseArgs():
     p.add_argument("--device", default="cuda", help="Device to use for training")
     p.add_argument("--img_size", type=int, default=64, help="Image size to train the model at")
     p.add_argument("--epochs", type=int, default=60, help="Number of epochs to train for")
-    p.add_argument("--val_freq", type=int, default=10, help="How many epochs between validations")
-    p.add_argument("--save_frequency", type=int, default=10, help="How many epochs between model save")
+    p.add_argument("--val_freq", type=int, default=5, help="How many epochs between validations")
+    p.add_argument("--save_frequency", type=int, default=5, help="How many epochs between model save")
     p.add_argument("--save_dir", default="checkpoints", help="Location of where to save model")
     p.add_argument("--load_model", type=str, default=None,
                    help="Location of where the model you want to load is stored")
@@ -41,7 +41,7 @@ def parseArgs():
     return args
 
 
-def evalModel(model: resnet34, dataLoader: DataLoader, optimizer: torch.optim, args) -> float:
+def evalModel(model: resnet101, dataLoader: DataLoader, optimizer: torch.optim, args) -> float:
     """
     :param model: Model object to train
     :param dataLoader: Dataloader for desired dataset
@@ -70,7 +70,7 @@ def evalModel(model: resnet34, dataLoader: DataLoader, optimizer: torch.optim, a
     return correct / len(dataLoader.dataset)
 
 
-def trainEpoch(model: resnet34, dataLoader: DataLoader, optimizer: torch.optim,
+def trainEpoch(model: resnet101, dataLoader: DataLoader, optimizer: torch.optim,
                scaler: torch.cuda.amp.GradScaler, args) -> list:
     """
     :param model: Model object to train
@@ -117,14 +117,14 @@ if __name__ == '__main__':
     # Setup dataloaders
 
     trainSetDataLoader = DataLoader(trainSet, batch_size=args.batch_size,
-                                    shuffle=True, num_workers=args.num_workers)
+                                    shuffle=True, num_workers=args.num_workers, pin_memory=True)
     valSetDataLoader = DataLoader(valSet, batch_size=args.batch_size,
-                                  shuffle=True, num_workers=args.num_workers)
+                                  shuffle=True, num_workers=args.num_workers, pin_memory=True)
     testSetDataLoader = DataLoader(testSet, batch_size=args.batch_size,
-                                   shuffle=False, num_workers=args.num_workers)
+                                   shuffle=False, num_workers=args.num_workers, pin_memory=True)
 
     # Load model
-    model = resnet34(num_classes=2)
+    model = resnet101(num_classes=2)
     if args.load_model and os.path.exists(args.load_model):
         model.load_state_dict(torch.load(args.load_model)["model"])
         print(f"Loaded {args.load_model}")
@@ -159,7 +159,7 @@ if __name__ == '__main__':
         torch.cuda.empty_cache()
 
         if epoch % args.val_freq == 0:
-            accuracy = evalModel(model, valSetDataLoader, args)
+            accuracy = evalModel(model, valSetDataLoader, optimizer ,args)
             print(f"Accuracy after validation is {accuracy * 100}%")
             accuracy = evalModel(model, testSetDataLoader,optimizer,
                                  args)  # Grouping test set here since validation set is much smaller, test set not used for any hyper-param optimizations
