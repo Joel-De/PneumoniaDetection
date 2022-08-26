@@ -15,7 +15,7 @@ from torchvision.models import resnet101
 from tqdm import tqdm
 
 from data.dataset import PneumoniaDetectionDataset
-
+from model import PneumoniaDetectionModel
 
 def parseArgs():
     p = argparse.ArgumentParser()
@@ -23,18 +23,18 @@ def parseArgs():
     p.add_argument("--device", default="cuda", help="Device to use for training")
     p.add_argument("--img_size", type=int, default=64, help="Image size to train the model at")
     p.add_argument("--epochs", type=int, default=60, help="Number of epochs to train for")
-    p.add_argument("--val_freq", type=int, default=5, help="How many epochs between validations")
+    p.add_argument("--val_freq", type=int, default=1, help="How many epochs between validations")
     p.add_argument("--save_frequency", type=int, default=5, help="How many epochs between model save")
     p.add_argument("--save_dir", default="checkpoints", help="Location of where to save model")
     p.add_argument("--load_model", type=str, default=None,
                    help="Location of where the model you want to load is stored")
-    p.add_argument("--batch_size", type=int, help="Batch-size to train with", default=1)
+    p.add_argument("--batch_size", type=int, help="Batch-size to train with", default=4)
     p.add_argument("--num_workers", type=int, help="Number of workers to use for dataloading", default=4)
     p.add_argument("--lr_step_size", type=int, default=20, help="How often to decay learning rate")
     p.add_argument("--lr_gamma", type=float, default=0.1, help="Factor to decrease learning rate by")
     p.add_argument("--lr", type=float, default=0.001, help="Learning rate to use in training")
     p.add_argument("--momentum", type=float, default=0.9, help="Momentum of learning rate for ADAM")
-    p.add_argument("--name", type=str, default=f"Train_{datetime.now().strftime('%m_%d_%H_%M_%S')}",
+    p.add_argument("--name", type=str, default=f"Train_{datetime.now().strftime('%m_%d_%H_%M')}",
                    help="Name to save results under")
 
     args = p.parse_args()
@@ -54,9 +54,10 @@ def evalModel(model: resnet101, dataLoader: DataLoader, optimizer: torch.optim, 
     print("Evaluating Model")
     correct = 0
     for data in tqdm(dataLoader):
-        batch, label = data['image'], data['class']
+        batch, label, lungClass = data['image'], data['label'], data['class']
         batch = batch.to(args.device)
         label = label.to(args.device)
+        lungClass = lungClass.to(args.device)
         optimizer.zero_grad()
 
         # Use AMP/fp16
@@ -82,9 +83,10 @@ def trainEpoch(model: resnet101, dataLoader: DataLoader, optimizer: torch.optim,
     """
     runningloss = []
     for data in tqdm(dataLoader):
-        batch, label = data['image'], data['class']
+        batch, label, lungClass = data['image'], data['label'], data['class']
         batch = batch.to(args.device)
         label = label.to(args.device)
+        lungClass = lungClass.to(args.device)
         optimizer.zero_grad()
 
         # Use AMP/fp16
@@ -124,7 +126,7 @@ if __name__ == '__main__':
                                    shuffle=False, num_workers=args.num_workers, pin_memory=True)
 
     # Load model
-    model = resnet101(num_classes=2)
+    model = PneumoniaDetectionModel()
     if args.load_model and os.path.exists(args.load_model):
         model.load_state_dict(torch.load(args.load_model)["model"])
         print(f"Loaded {args.load_model}")

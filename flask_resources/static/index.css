@@ -1,5 +1,6 @@
 *{
     font-family: 'Montserrat', sans-serif;
+    background-color: #ddd;
 }
 
 .main{
@@ -8,11 +9,25 @@
     height: 900px;
 }
 
+
+html {
+    scroll-behavior: smooth;
+  }
+  
 .mainTitle {
     margin-left: 20px;
     margin-top: 10px;
     font-size: 100px;
 }
+
+
+#testResult{
+    margin-left: 20px;
+    margin-top: 10px;
+    font-size: 50px;
+    float: left;
+}
+
 
 .Button * {
     vertical-align: middle;
@@ -77,3 +92,83 @@
     transition: all 1s;
     box-sizing: border-box;
 }
+
+
+
+.title {
+    float:right;
+
+    animation-duration: 1s;
+    animation-name: slidein;
+}
+
+@keyframes slidein {
+    from {
+        margin-right: 100%;
+    }
+    to {
+        margin-right: 0%;
+    }
+}
+
+
+.Button { animation: fadeIn 2s; }
+
+@keyframes fadeIn {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+
+
+
+
+
+.previewImage {
+    width: scale;
+    height:700px;
+    margin-top: 200px;
+    margin-left: 100px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 5px;
+    float: left;
+}
+
+
+
+
+
+
+
+
+.line {
+    display: block;
+    color: black;
+    background-color: black;
+    text-align: center;
+    margin-top: 100;
+    padding: 14px 16px;
+    text-decoration: none;
+}
+
+
+
+#resultPreview {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+
+
+.previewImage { 
+    flex: 1;
+    margin: 10px;
+} 
+
+.previewText { 
+    flex: 1;
+    margin-left: 100px;
+    align-items: center;
+    width: 600px;
+} 

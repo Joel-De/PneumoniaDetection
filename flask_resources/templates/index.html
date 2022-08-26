@@ -11,30 +11,114 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/boxicons@2.1.2/dist/boxicons.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+    <script>
+      var loadFile = function(event) {
+        var image = document.getElementById('middle');
+        image.src = URL.createObjectURL(event.target.files[0]);
+        console.log("test");
+        document.getElementById("uploadButton").innerHTML = "Image Uploaded"
+
+      };
+
+      var scroll = function(event) {
+        document.getElementById('middle').scrollIntoView();
+
+      };
+    </script>
+
+    <script>
+        $(document).ready(function(){
+          $("Button").on('click', function(event) {
+            if (this.hash !== "") {
+              event.preventDefault();
+              var hash = this.hash;
+              $('html, body').animate({
+                scrollTop: $(hash).offset().top
+              }, 300, function(){
+                window.location.hash = hash;
+              });
+            }
+          });
+        });
+        </script>
 
 </head>
 <body>
 <div class="main">
     <div class="mainTitle">
-        <h3> Pneumonia Detector
-        </h3>
+
+        <h3 class="title"> Pneumonia Detector</h3>
         <span>
-            <form method=post enctype=multipart/form-data>
-                <span class="Button">
-                    Upload Image
+          <div>
+            <form method=post enctype=multipart/form-data id="mainform">
+                <span class="Button" style = "float:left" >
+                    <text id="uploadButton">
+                      Upload Image
+                    </text>
+                    
                     <img src="../static/bx-upload.svg" alt="" class="logoImg">
-                    <input type="file" class="hide_file" name="file">
+                    <input type="file" class="hide_file" name="file" onchange="loadFile(event)"  >
                 </span>
+            
                 <span class="Button">
                     Submit
                     <img src="../static/bx-send.svg" alt="" class="logoImg">
-                    <input type="submit" class="hide_file" name="submit_button">
+                    <input type="submit" class="hide_file" name="submit_button" id= "thisone" >
                 </span>
             </form>
+            </div>
             <button class="Button"><a onclick="window.open('https://github.com/Joel-De/PneumoniaDetection')">github <img
                     src="../static/bxl-github.svg" alt="" class="logoImg"> </a></button>
         </span>
     </div>
-    <img src="../static/Pneumonia_1.jpeg" alt="" class="pneumoniaImg">
+    <img src="../static/Pneumonia_2.png" alt="" class="pneumoniaImg">
+
+
 </div>
+<li class = "line" ></li>
+<div id = "resultPreview">
+  <img class="previewImage" id = "middle"  alt="Italian Trulli" src="../static/placeholder.jpg">
+  <h3  class="previewText" id="testResult">Upload Image...</h3 >
+</div>
+
 </body>
+
+
+<script>
+  $(function () {
+      $('#mainform').on('submit',function (e) {
+            var formData = new FormData(this);
+            $.ajax({
+                url: window.location.pathname,
+                type: 'POST',
+                data: formData,
+                success: function (data) {
+                  document.getElementById("testResult").innerHTML = data;  
+                  scroll(e);
+                },
+                cache: false,
+                contentType: false,
+                processData: false
+            });
+            e.preventDefault();
+          });
+  });
+</script>
+
+
+<script>
+  let form = document.querySelector ( '#thisone');
+  function handleForm(event) { event.preventDefault(); } 
+  form.addEventListener('submit', handleForm);
+  form.addEventListener('submit', function(event) {
+      event.preventDefault();
+      const formData = new FormData(form);
+      fetch('/', {
+          method: 'POST',
+          body: formData,
+      }).then(function(response) {
+      });
+  });
+</script>

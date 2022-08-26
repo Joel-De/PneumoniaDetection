@@ -3,10 +3,10 @@ import io
 
 import torch
 from PIL import Image
-from flask import Flask, render_template
+from flask import Flask, render_template, url_for, jsonify
 from flask import request, redirect
-from torchvision.models import vision_transformer
-
+from torchvision.models import resnet101
+from model import PneumoniaDetectionModel
 from data.dataset import PneumoniaDetectionDataset
 
 app = Flask(__name__)
@@ -29,9 +29,9 @@ def upload_file():
         result = model(img)
         outputClass = PneumoniaDetectionDataset.getClassMap()[result.argmax().item()]
         printMessage = f"The patient has {outputClass}" if outputClass == "Pneumonia" else f"The patient is healthy!"
-        return render_template('display.html', user_image="static/tmp.png", result=printMessage)
+        print(printMessage)
+        return jsonify(printMessage)
     return render_template('index.html')
-
 
 def parseArgs():
     p = argparse.ArgumentParser()
@@ -45,7 +45,7 @@ def parseArgs():
 if __name__ == '__main__':
     args = parseArgs()
     modelData = torch.load(args.load_model)
-    model = vision_transformer.vit_b_16(num_classes=2, image_size=modelData['imgSize'])
+    model = PneumoniaDetectionModel()
     model.load_state_dict(modelData['model'])
     print(f"Loaded {args.load_model}")
     model.to(args.device)
