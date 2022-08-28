@@ -15,7 +15,7 @@ class PneumoniaDetectionDataset(Dataset):
         :param transform:#NOT IMPLEMENTED
         """
         self.rootDir = os.path.join(datasetInformationDir, "..")
-        self.maxDatasetLen = None
+        self.maxDatasetLen = 100# None
         with open(datasetInformationDir, 'r') as jsonFile:
             self.datasetInformation = json.load(jsonFile)
         self.transform = transform
@@ -27,6 +27,15 @@ class PneumoniaDetectionDataset(Dataset):
         :return: Returns dictionary of index -> ID
         """
         return {0: 'Normal', 1: "Pneumonia"}
+
+    @staticmethod
+    def getLungClassMap() -> dict:
+        """
+        :return: Returns dictionary of index -> ID
+        """
+        return {"No Lung Opacity / Not Normal":0,
+                "Normal":1,
+                "Lung Opacity":2}
 
     @staticmethod
     def basicPreprocess(imgSize: int) -> torchvision.transforms:
@@ -52,14 +61,18 @@ class PneumoniaDetectionDataset(Dataset):
         img = self.basicPreprocess(self.imgSize)(img)
         img = img.type(torch.FloatTensor)
 
-        imgClass = [0, 0]
-        imgClass[self.datasetInformation[idx]['Label']] = 1
-        imgClass = torch.tensor(imgClass, dtype=torch.float)
-        packedData = {'image': img, 'class': imgClass}
+        imgLabel = [0, 0]
+        imgLabel[self.datasetInformation[idx]['Label']] = 1
+        imgLabel = torch.tensor(imgLabel, dtype=torch.float)
+
+        lungClass = [0,0,0]
+        lungClass[self.getLungClassMap()[self.datasetInformation[idx]['AdditionalInformation']]] = 1
+        lungClass = torch.tensor(lungClass, dtype=torch.float)
+        packedData = {'image': img, 'label': imgLabel, 'class':lungClass}
         return packedData
 
 
 if __name__ == '__main__':
-    dat = PneumoniaDetectionDataset(r"F:\PycharmProjects\PneumoniaDetection\data\RSNADataset\Train\datasetInformation.json")
+    dat = PneumoniaDetectionDataset(r"F:\PycharmProjects\PneumoniaDetection\RSNADataset\Train\datasetInformation.json")
     print(dat.__len__())
-    print(dat.__getitem__(200)['image'].size())
+    print(dat.__getitem__(200))

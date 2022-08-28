@@ -29,7 +29,6 @@ def upload_file():
         result = model(img)
         outputClass = PneumoniaDetectionDataset.getClassMap()[result.argmax().item()]
         printMessage = f"The patient has {outputClass}" if outputClass == "Pneumonia" else f"The patient is healthy!"
-        print(printMessage)
         return jsonify(printMessage)
     return render_template('index.html')
 
