@@ -1,12 +1,17 @@
 import argparse
 import os
 import time
+from contextlib import nullcontext
 from datetime import datetime
 from statistics import fmean
+from typing import Union
 
 import numpy as np
 import tensorboard
 import torch
+from matplotlib.figure import Figure
+from sklearn import metrics
+from sklearn.metrics import confusion_matrix
 from torch import optim
 from torch.optim.lr_scheduler import StepLR
 from torch.utils.data import DataLoader
@@ -16,6 +21,7 @@ from tqdm import tqdm
 
 from data.dataset import PneumoniaDetectionDataset
 from model import PneumoniaDetectionModel
+
 
 def parseArgs():
     p = argparse.ArgumentParser()
@@ -41,7 +47,7 @@ def parseArgs():
     return args
 
 
-def evalModel(model: resnet101, dataLoader: DataLoader, optimizer: torch.optim, args) -> float:
+def evalModel(model: resnet101, dataLoader: DataLoader, optimizer: torch.optim, args) -> Union[float, Figure]:
     """
     :param model: Model object to train
     :param dataLoader: Dataloader for desired dataset
@@ -50,9 +56,10 @@ def evalModel(model: resnet101, dataLoader: DataLoader, optimizer: torch.optim, 
     :return: Accuracy of evaluation
     """
     torch.cuda.empty_cache()
-    time.sleep(1)
+    time.sleep(2)
     print("Evaluating Model")
     correct = 0
+    predictionList, labelList = [], []
     for data in tqdm(dataLoader):
         batch, label, lungClass = data['image'], data['label'], data['class']
         batch = batch.to(args.device)
@@ -61,14 +68,19 @@ def evalModel(model: resnet101, dataLoader: DataLoader, optimizer: torch.optim, 
         optimizer.zero_grad()
 
         # Use AMP/fp16
-        with torch.amp.autocast(args.device):
+        with torch.amp.autocast(args.device) if args.device != "cpu" else nullcontext():
             with torch.no_grad():
                 loss = model(batch)
-
         res = loss.cpu().argmax(-1)
+        predictionList.extend(res.numpy())
+        labelList.extend(np.argmax(label.cpu(), -1))
         correct += np.count_nonzero(res == np.argmax(label.cpu(), -1))
 
-    return correct / len(dataLoader.dataset)
+    confusionMatrix = confusion_matrix(labelList, predictionList)
+    confusionMatrixImg = metrics.ConfusionMatrixDisplay(confusion_matrix=confusionMatrix, display_labels=[False, True])
+    confusionMatrixImg.plot()
+
+    return correct / len(dataLoader.dataset), confusionMatrixImg.figure_
 
 
 def trainEpoch(model: resnet101, dataLoader: DataLoader, optimizer: torch.optim,
@@ -90,15 +102,19 @@ def trainEpoch(model: resnet101, dataLoader: DataLoader, optimizer: torch.optim,
         optimizer.zero_grad()
 
         # Use AMP/fp16
-        with torch.amp.autocast(args.device):
+
+        with torch.amp.autocast(args.device) if args.device != "cpu" else nullcontext():
             loss = model(batch)
 
         loss = loss.to(torch.float32)
         loss = criterion(loss, label)
 
-        scaler.scale(loss).backward()
-        scaler.step(optimizer)
-        scaler.update()
+        if args.device != "cpu":
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
+        else:
+            loss.backward()
         runningloss.append(loss.item())
     return runningloss
 
@@ -109,9 +125,12 @@ if __name__ == '__main__':
     if not os.path.exists(args.save_dir):
         os.mkdir(args.save_dir)
 
-    testSet = PneumoniaDetectionDataset(os.path.join(args.data, "Test", "datasetInformation.json"), imgSize=args.img_size)
-    trainSet = PneumoniaDetectionDataset(os.path.join(args.data, "Train", "datasetInformation.json"), imgSize=args.img_size)
-    valSet = PneumoniaDetectionDataset(os.path.join(args.data, "Test", "datasetInformation.json"), imgSize=args.img_size)
+    testSet = PneumoniaDetectionDataset(os.path.join(args.data, "Test", "datasetInformation.json"),
+                                        imgSize=args.img_size)
+    trainSet = PneumoniaDetectionDataset(os.path.join(args.data, "Train", "datasetInformation.json"),
+                                         imgSize=args.img_size)
+    valSet = PneumoniaDetectionDataset(os.path.join(args.data, "Test", "datasetInformation.json"),
+                                       imgSize=args.img_size)
     # Setup datasets
 
     print(f"Found the following number of images:\nTrain: {len(trainSet)}\nVal: {len(valSet)}\nTest: {len(testSet)}")
@@ -136,7 +155,7 @@ if __name__ == '__main__':
     scaler = torch.cuda.amp.GradScaler()
     scheduler = StepLR(optimizer, args.lr_step_size, gamma=args.lr_gamma)
 
-    time.sleep(1)
+    time.sleep(2)
     iterCount = 0
     print("Starting Tensorboard server")
     tensorBoardProgram = tensorboard.program.TensorBoard()
@@ -152,22 +171,21 @@ if __name__ == '__main__':
     for epoch in range(1, args.epochs + 1, 1):
         print(f"Starting epoch {epoch}")
         torch.cuda.empty_cache()
-        time.sleep(1)
+        time.sleep(2)
         runningLoss = trainEpoch(model, trainSetDataLoader, optimizer, scaler, args)
 
         # Update learning rate
         scheduler.step()
-
         torch.cuda.empty_cache()
-
         if epoch % args.val_freq == 0:
-            accuracy = evalModel(model, valSetDataLoader, optimizer ,args)
+            accuracy, plot = evalModel(model, valSetDataLoader, optimizer, args)
             print(f"Accuracy after validation is {accuracy * 100}%")
-            accuracy = evalModel(model, testSetDataLoader,optimizer,
-                                 args)  # Grouping test set here since validation set is much smaller, test set not used for any hyper-param optimizations
+            accuracy, plot = evalModel(model, testSetDataLoader, optimizer,
+                                       args)  # Grouping test set here since validation set is much smaller, test set not used for any hyper-param optimizations
 
             print(f"Accuracy after test is {accuracy * 100}%")
-            tensorboardWriter.add_scalar("Accuracy/Val", accuracy, global_step=epoch)
+            tensorboardWriter.add_scalar("Val/Accuracy", accuracy, global_step=epoch)
+            tensorboardWriter.add_figure("Val/Figure", plot)
 
         if epoch % args.save_frequency == 0:
             saveDir = os.path.join(args.save_dir, f"{args.name}_model.pth")
