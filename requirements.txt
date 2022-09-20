@@ -8,7 +8,6 @@ flask==2.2.2
 tqdm==4.64.0
 pillow==9.2.0
 pandas==1.4.3
-scikit-image==1.0.2
 matplotlib==3.5.3
 scikit-learn==1.0.2
 numpy==1.23.1

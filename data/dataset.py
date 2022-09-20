@@ -15,7 +15,7 @@ class PneumoniaDetectionDataset(Dataset):
         :param transform:#NOT IMPLEMENTED
         """
         self.rootDir = os.path.join(datasetInformationDir, "..")
-        self.maxDatasetLen = 100# None
+        self.maxDatasetLen = None
         with open(datasetInformationDir, 'r') as jsonFile:
             self.datasetInformation = json.load(jsonFile)
         self.transform = transform

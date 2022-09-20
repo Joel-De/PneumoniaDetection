@@ -53,7 +53,7 @@ if __name__ == '__main__':
     random.shuffle(dataPoints)
 
     # Generate Train & Test splits
-    PercentTrain = 0.8
+    PercentTrain = 0.9
 
     trainSplit, testSplit = dataPoints[:int(len(dataPoints) * PercentTrain)], dataPoints[
                                                                               int(len(dataPoints) * PercentTrain):]

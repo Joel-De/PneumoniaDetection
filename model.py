@@ -1,13 +1,13 @@
 import time
 
-from torchvision.models import resnet101
+from torchvision.models import resnet101, resnet50
 import torch
 
 
 class PneumoniaDetectionModel(torch.nn.Module):
     def __init__(self):
         super().__init__()
-        self.resnet = resnet101()
+        self.resnet = resnet50()
         self.resnet = torch.nn.Sequential(*list(self.resnet.children())[:-1])
         self.l1 = torch.nn.Linear(in_features=2048, out_features=1024)
         # self.expandLungClass = torch.nn.Linear(3, 128)

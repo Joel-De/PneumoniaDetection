@@ -9,6 +9,8 @@ from typing import Union
 import numpy as np
 import tensorboard
 import torch
+import matplotlib
+matplotlib.use('Agg')
 from matplotlib.figure import Figure
 from sklearn import metrics
 from sklearn.metrics import confusion_matrix
@@ -27,16 +29,16 @@ def parseArgs():
     p = argparse.ArgumentParser()
     p.add_argument("--data", help="Path to data parent directory", required=True)
     p.add_argument("--device", default="cuda", help="Device to use for training")
-    p.add_argument("--img_size", type=int, default=64, help="Image size to train the model at")
-    p.add_argument("--epochs", type=int, default=60, help="Number of epochs to train for")
-    p.add_argument("--val_freq", type=int, default=1, help="How many epochs between validations")
+    p.add_argument("--img_size", type=int, default=256, help="Image size to train the model at")
+    p.add_argument("--epochs", type=int, default=40, help="Number of epochs to train for")
+    p.add_argument("--val_freq", type=int, default=5, help="How many epochs between validations")
     p.add_argument("--save_frequency", type=int, default=5, help="How many epochs between model save")
     p.add_argument("--save_dir", default="checkpoints", help="Location of where to save model")
     p.add_argument("--load_model", type=str, default=None,
                    help="Location of where the model you want to load is stored")
     p.add_argument("--batch_size", type=int, help="Batch-size to train with", default=4)
     p.add_argument("--num_workers", type=int, help="Number of workers to use for dataloading", default=4)
-    p.add_argument("--lr_step_size", type=int, default=20, help="How often to decay learning rate")
+    p.add_argument("--lr_step_size", type=int, default=30, help="How often to decay learning rate")
     p.add_argument("--lr_gamma", type=float, default=0.1, help="Factor to decrease learning rate by")
     p.add_argument("--lr", type=float, default=0.001, help="Learning rate to use in training")
     p.add_argument("--momentum", type=float, default=0.9, help="Momentum of learning rate for ADAM")
@@ -58,6 +60,7 @@ def evalModel(model: resnet101, dataLoader: DataLoader, optimizer: torch.optim, 
     torch.cuda.empty_cache()
     time.sleep(2)
     print("Evaluating Model")
+    time.sleep(2)
     correct = 0
     predictionList, labelList = [], []
     for data in tqdm(dataLoader):
@@ -77,7 +80,7 @@ def evalModel(model: resnet101, dataLoader: DataLoader, optimizer: torch.optim, 
         correct += np.count_nonzero(res == np.argmax(label.cpu(), -1))
 
     confusionMatrix = confusion_matrix(labelList, predictionList)
-    confusionMatrixImg = metrics.ConfusionMatrixDisplay(confusion_matrix=confusionMatrix, display_labels=[False, True])
+    confusionMatrixImg = metrics.ConfusionMatrixDisplay(confusion_matrix=confusionMatrix, display_labels=[True, False])
     confusionMatrixImg.plot()
 
     return correct / len(dataLoader.dataset), confusionMatrixImg.figure_
@@ -138,11 +141,11 @@ if __name__ == '__main__':
     # Setup dataloaders
 
     trainSetDataLoader = DataLoader(trainSet, batch_size=args.batch_size,
-                                    shuffle=True, num_workers=args.num_workers, pin_memory=True)
+                                    shuffle=True, num_workers=args.num_workers, pin_memory=True, prefetch_factor=4)
     valSetDataLoader = DataLoader(valSet, batch_size=args.batch_size,
-                                  shuffle=True, num_workers=args.num_workers, pin_memory=True)
+                                  shuffle=True, num_workers=args.num_workers, pin_memory=True, prefetch_factor=4)
     testSetDataLoader = DataLoader(testSet, batch_size=args.batch_size,
-                                   shuffle=False, num_workers=args.num_workers, pin_memory=True)
+                                   shuffle=False, num_workers=args.num_workers, pin_memory=True, prefetch_factor=4)
 
     # Load model
     model = PneumoniaDetectionModel()
@@ -166,7 +169,6 @@ if __name__ == '__main__':
     # tensorboardWriter.add_graph(model, torch.zeros((1,3,args.img_size,args.img_size)), use_strict_trace=True) # Broken with torch 1.12.1
     model.to(args.device)
     model.train()
-
     print(f"Starting train sequence for {args.epochs} epochs!")
     for epoch in range(1, args.epochs + 1, 1):
         print(f"Starting epoch {epoch}")
@@ -180,12 +182,11 @@ if __name__ == '__main__':
         if epoch % args.val_freq == 0:
             accuracy, plot = evalModel(model, valSetDataLoader, optimizer, args)
             print(f"Accuracy after validation is {accuracy * 100}%")
-            accuracy, plot = evalModel(model, testSetDataLoader, optimizer,
-                                       args)  # Grouping test set here since validation set is much smaller, test set not used for any hyper-param optimizations
-
-            print(f"Accuracy after test is {accuracy * 100}%")
+            # accuracy, plot = evalModel(model, testSetDataLoader, optimizer,args)  # Grouping test set here since validation set is much smaller, test set not used for any hyper-param optimizations
+            # print(f"Accuracy after test is {accuracy * 100}%")
             tensorboardWriter.add_scalar("Val/Accuracy", accuracy, global_step=epoch)
-            tensorboardWriter.add_figure("Val/Figure", plot)
+            tensorboardWriter.add_figure("Val/Figure", plot, global_step=epoch)
+            plot.savefig('confusion_matrix.png')
 
         if epoch % args.save_frequency == 0:
             saveDir = os.path.join(args.save_dir, f"{args.name}_model.pth")

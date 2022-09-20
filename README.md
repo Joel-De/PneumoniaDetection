@@ -22,6 +22,10 @@ To train the model run the following command, additional arguments can be passed
 python train.py --data "Path/To/Formatted/Dataset/" --output_dir "Output/Dir/RNSADataset" --epochs 100 --val_freq 10
 ```
 
+The following is the confusion matrix after training the model
+
+![Confusion Matrix](confusion_matrix.png)
+
 # Inference
 
 To run inference on a given image once the model has been trained run the following command, the script will print the result to console.
