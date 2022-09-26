@@ -45,7 +45,7 @@ def parseArgs():
 
 if __name__ == '__main__':
     args = parseArgs()
-    modelData = torch.load(args.load_model)
+    modelData = torch.load(args.load_model, map_location=torch.device('cpu'))
     model = PneumoniaDetectionModel()
     model.load_state_dict(modelData['model'])
     print(f"Loaded {args.load_model}")
