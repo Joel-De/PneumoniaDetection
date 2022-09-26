@@ -5,8 +5,8 @@ import torch
 from PIL import Image
 from flask import Flask, render_template, url_for, jsonify
 from flask import request, redirect
-from model import PneumoniaDetectionModel
-from data.dataset import PneumoniaDetectionDataset
+from ..model import PneumoniaDetectionModel
+from ..data.dataset import PneumoniaDetectionDataset
 import os
 
 app = Flask(__name__, static_url_path='/static')
