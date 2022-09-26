@@ -51,7 +51,7 @@ class PneumoniaDetectionDataset(Dataset):
         return min(self.maxDatasetLen, len(self.datasetInformation)) if self.maxDatasetLen else len(
             self.datasetInformation)
 
-    def __getitem__(self, idx: int) -> Dict[str:torch.Tensor]:
+    def __getitem__(self, idx: int):
         """
         :param idx: Index of data to use
         :return: Dictionary of image and class label
