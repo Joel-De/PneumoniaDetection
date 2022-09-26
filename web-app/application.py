@@ -7,6 +7,7 @@ from flask import Flask, render_template, url_for, jsonify
 from flask import request, redirect
 from model import PneumoniaDetectionModel
 from data.dataset import PneumoniaDetectionDataset
+import os
 
 app = Flask(__name__, static_url_path='/static')
 app.secret_key = b'@VOv3oactreto8yavheE$B^eo'
@@ -48,4 +49,4 @@ if __name__ == '__main__':
     print(f"Loaded {args.load_model}")
     model.to(args.device)
     model.eval()
-    app.run(debug=True)
+    app.run(debug=True, port=os.getenv('PORT',5000))
