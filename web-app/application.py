@@ -3,6 +3,7 @@ import io
 import os
 import sys
 sys.path.append(os.path.join(os.getcwd()))
+sys.path.append(os.path.join(os.getcwd(), '..'))
 import torch
 from PIL import Image
 from flask import Flask, render_template, url_for, jsonify
@@ -11,7 +12,7 @@ from model import PneumoniaDetectionModel
 from data.dataset import PneumoniaDetectionDataset
 
 
-app = Flask(__name__, static_url_path='/static')
+app = Flask(__name__,template_folder='.')
 app.secret_key = b'@VOv3oactreto8yavheE$B^eo'
 
 
@@ -32,12 +33,12 @@ def upload_file():
         outputClass = PneumoniaDetectionDataset.getClassMap()[result.argmax().item()]
         printMessage = f"The patient has {outputClass}" if outputClass == "Pneumonia" else f"The patient is healthy!"
         return jsonify(printMessage)
-    return render_template('index.html')
+    return render_template('./index.html')
 
 def parseArgs():
     p = argparse.ArgumentParser()
     p.add_argument("--device", default="cpu", help="Device to use for training")
-    p.add_argument("--load_model", type=str, default="web-app/static/prod.pth",
+    p.add_argument("--load_model", type=str, default="static/prod.pth",
                    help="Location of where the model you want to load is stored")
     arguments = p.parse_args()
     return arguments
