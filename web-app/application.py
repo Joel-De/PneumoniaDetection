@@ -5,7 +5,6 @@ import torch
 from PIL import Image
 from flask import Flask, render_template, url_for, jsonify
 from flask import request, redirect
-from torchvision.models import resnet101
 from model import PneumoniaDetectionModel
 from data.dataset import PneumoniaDetectionDataset
 
