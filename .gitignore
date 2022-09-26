@@ -120,3 +120,4 @@ dmypy.json
 /flask_resources/static/tmp.png
 /RSNADataset
 /data/RSNADataset
+!web-app/static/prod.pth
