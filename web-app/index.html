@@ -91,7 +91,7 @@
       $('#mainform').on('submit',function (e) {
             var formData = new FormData(this);
             $.ajax({
-                url: window.location.pathname,
+                url: http://127.0.0.1:5000/,
                 type: 'POST',
                 data: formData,
                 success: function (data) {
