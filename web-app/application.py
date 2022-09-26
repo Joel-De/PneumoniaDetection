@@ -2,8 +2,7 @@ import argparse
 import io
 import os
 import sys
-sys.path.append('..')
-
+sys.path.append(os.path.join(os.getcwd()))
 import torch
 from PIL import Image
 from flask import Flask, render_template, url_for, jsonify
@@ -38,7 +37,7 @@ def upload_file():
 def parseArgs():
     p = argparse.ArgumentParser()
     p.add_argument("--device", default="cpu", help="Device to use for training")
-    p.add_argument("--load_model", type=str, default="static/prod.pth",
+    p.add_argument("--load_model", type=str, default="web-app/static/prod.pth",
                    help="Location of where the model you want to load is stored")
     arguments = p.parse_args()
     return arguments
