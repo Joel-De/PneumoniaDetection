@@ -34,8 +34,8 @@ def upload_file():
 
 def parseArgs():
     p = argparse.ArgumentParser()
-    p.add_argument("--device", default="cuda", help="Device to use for training")
-    p.add_argument("--load_model", type=str, default=None, required=True,
+    p.add_argument("--device", default="cpu", help="Device to use for training")
+    p.add_argument("--load_model", type=str, default="static/prod.pth",
                    help="Location of where the model you want to load is stored")
     arguments = p.parse_args()
     return arguments
