@@ -1,6 +1,6 @@
 import time
 
-from torchvision.models import resnet101, resnet50
+from torchvision.models import resnet50
 import torch
 
 

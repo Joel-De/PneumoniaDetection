@@ -1,12 +1,13 @@
+import json
 import os
+from pathlib import Path
+from typing import Union, Dict
+
 import torch.nn
 import torchvision
-import json
-
 from PIL import Image
 from torch.utils.data import Dataset
-from pathlib import Path
-from typing import Union
+
 
 class PneumoniaDetectionDataset(Dataset):
     def __init__(self, datasetInformationDir: Union[str, Path], imgSize=224, transform=None):
@@ -22,20 +23,20 @@ class PneumoniaDetectionDataset(Dataset):
         self.imgSize = imgSize
 
     @staticmethod
-    def getClassMap() -> dict:
+    def getClassMap() -> Dict:
         """
         :return: Returns dictionary of index -> ID
         """
         return {0: 'Normal', 1: "Pneumonia"}
 
     @staticmethod
-    def getLungClassMap() -> dict:
+    def getLungClassMap() -> Dict:
         """
         :return: Returns dictionary of index -> ID
         """
-        return {"No Lung Opacity / Not Normal":0,
-                "Normal":1,
-                "Lung Opacity":2}
+        return {"No Lung Opacity / Not Normal": 0,
+                "Normal": 1,
+                "Lung Opacity": 2}
 
     @staticmethod
     def basicPreprocess(imgSize: int) -> torchvision.transforms:
@@ -47,9 +48,10 @@ class PneumoniaDetectionDataset(Dataset):
             [torchvision.transforms.ToTensor(), torchvision.transforms.Resize((imgSize, imgSize))])
 
     def __len__(self) -> int:
-        return min(self.maxDatasetLen, len(self.datasetInformation)) if self.maxDatasetLen else len(self.datasetInformation)
+        return min(self.maxDatasetLen, len(self.datasetInformation)) if self.maxDatasetLen else len(
+            self.datasetInformation)
 
-    def __getitem__(self, idx: int) -> dict[str:torch.Tensor]:
+    def __getitem__(self, idx: int) -> Dict[str:torch.Tensor]:
         """
         :param idx: Index of data to use
         :return: Dictionary of image and class label
@@ -65,10 +67,10 @@ class PneumoniaDetectionDataset(Dataset):
         imgLabel[self.datasetInformation[idx]['Label']] = 1
         imgLabel = torch.tensor(imgLabel, dtype=torch.float)
 
-        lungClass = [0,0,0]
+        lungClass = [0, 0, 0]
         lungClass[self.getLungClassMap()[self.datasetInformation[idx]['AdditionalInformation']]] = 1
         lungClass = torch.tensor(lungClass, dtype=torch.float)
-        packedData = {'image': img, 'label': imgLabel, 'class':lungClass}
+        packedData = {'image': img, 'label': imgLabel, 'class': lungClass}
         return packedData
 
 
