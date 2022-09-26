@@ -1,13 +1,16 @@
 import argparse
 import io
+import os
+import sys
+sys.path.append('..')
 
 import torch
 from PIL import Image
 from flask import Flask, render_template, url_for, jsonify
 from flask import request, redirect
-from ..model import PneumoniaDetectionModel
-from ..data.dataset import PneumoniaDetectionDataset
-import os
+from model import PneumoniaDetectionModel
+from data.dataset import PneumoniaDetectionDataset
+
 
 app = Flask(__name__, static_url_path='/static')
 app.secret_key = b'@VOv3oactreto8yavheE$B^eo'
