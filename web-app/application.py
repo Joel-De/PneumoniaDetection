@@ -18,6 +18,7 @@ app.secret_key = b'@VOv3oactreto8yavheE$B^eo'
 
 @app.route('/', methods=['GET', 'POST'])
 def upload_file():
+    model, args, modelData = loadModel()
     if request.method == 'POST':
         if 'file' not in request.files:
             print('No file part')
@@ -44,7 +45,7 @@ def parseArgs():
     return arguments
 
 
-if __name__ == '__main__':
+def loadModel():
     args = parseArgs()
     modelData = torch.load(args.load_model, map_location=torch.device('cpu'))
     model = PneumoniaDetectionModel()
@@ -52,4 +53,8 @@ if __name__ == '__main__':
     print(f"Loaded {args.load_model}")
     model.to(args.device)
     model.eval()
+    return model, args, modelData
+
+if __name__ == '__main__':
+    model, args, modelData = loadModel()
     app.run(debug=True, port=os.getenv('PORT',5000))
