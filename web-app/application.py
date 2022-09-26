@@ -1,15 +1,17 @@
 import argparse
 import io
-
+import os
+import sys
+sys.path.append(os.path.join(os.getcwd()))
 import torch
 from PIL import Image
 from flask import Flask, render_template, url_for, jsonify
 from flask import request, redirect
-from torchvision.models import resnet101
 from model import PneumoniaDetectionModel
 from data.dataset import PneumoniaDetectionDataset
 
-app = Flask(__name__)
+
+app = Flask(__name__, static_url_path='/static')
 app.secret_key = b'@VOv3oactreto8yavheE$B^eo'
 
 
@@ -35,7 +37,7 @@ def upload_file():
 def parseArgs():
     p = argparse.ArgumentParser()
     p.add_argument("--device", default="cpu", help="Device to use for training")
-    p.add_argument("--load_model", type=str, default="static/prod.pth",
+    p.add_argument("--load_model", type=str, default="web-app/static/prod.pth",
                    help="Location of where the model you want to load is stored")
     arguments = p.parse_args()
     return arguments
@@ -43,10 +45,10 @@ def parseArgs():
 
 if __name__ == '__main__':
     args = parseArgs()
-    modelData = torch.load(args.load_model)
+    modelData = torch.load(args.load_model, map_location=torch.device('cpu'))
     model = PneumoniaDetectionModel()
     model.load_state_dict(modelData['model'])
     print(f"Loaded {args.load_model}")
     model.to(args.device)
     model.eval()
-    app.run(debug=True)
+    app.run(debug=True, port=os.getenv('PORT',5000))

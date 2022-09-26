@@ -1,13 +1,10 @@
-torch==1.12.1
-torchvision==0.13.1
-torchaudio==0.12.1
+-f https://download.pytorch.org/whl/torch_stable.html
+torch==1.12.1+cpu
+torchvision==0.13.1+cpu
 tensorboard==2.10.0
 opencv-python
 flask==2.2.2
 tqdm==4.64.0
 pillow==9.2.0
-pandas==1.4.3
-matplotlib==3.5.3
-scikit-learn==1.0.2
 numpy==1.23.1
-gunicorn == 20.1.0
+gunicorn==20.1.0
