@@ -13,7 +13,6 @@ import { ImGithub } from "react-icons/im";
 import { AiOutlineCloudUpload, AiOutlineDisconnect } from "react-icons/ai";
 import { Icon } from "@chakra-ui/react";
 
-import { HamburgerIcon, CloseIcon } from "@chakra-ui/icons";
 
 import {
   Box,
@@ -30,10 +29,24 @@ import {
   MenuDivider,
   useDisclosure,
   useColorModeValue,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
   Stack,
 } from "@chakra-ui/react";
 import { useInViewport } from "react-in-viewport";
 import { useRef } from "react";
+
+import NavBar from "./nav.js";
+
+import {
+    
+    HamburgerIcon, CloseIcon,
+    ChevronDownIcon,
+    ChevronRightIcon,
+  } from '@chakra-ui/icons'
+
+
 
 function App() {
   const ref = useRef(null);
@@ -44,10 +57,21 @@ function App() {
     {}
   );
 
+  const linkColor = useColorModeValue('gray.600', 'gray.200')
+  const linkHoverColor = useColorModeValue('gray.800', 'white')
+  const popoverContentBgColor = useColorModeValue('white', 'gray.800')
+
+
+  const { isOpen, onToggle } = useDisclosure()
+
+
   return (
     <ChakraProvider>
       <div className="App">
         <header className="App-header">
+        
+            <NavBar/>
+
           <Grid
             templateColumns="repeat(12, 1fr)"
             templateRows="repeat(7, 1fr)"
