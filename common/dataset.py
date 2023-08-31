@@ -53,7 +53,7 @@ class PneumoniaDetectionDataset(Dataset):
 
     def __getitem__(self, idx: int):
         """
-        :param idx: Index of data to use
+        :param idx: Index of common to use
         :return: Dictionary of image and class label
         """
         img = Image.open(os.path.join(self.rootDir, self.datasetInformation[idx]['FilePath'])).convert('RGB')

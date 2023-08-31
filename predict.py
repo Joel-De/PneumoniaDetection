@@ -9,7 +9,7 @@ from data.dataset import PneumoniaDetectionDataset
 
 def parseArgs():
     p = argparse.ArgumentParser()
-    p.add_argument("--data", help="Path to image", required=True)
+    p.add_argument("--common", help="Path to image", required=True)
     p.add_argument("--device", default="cuda", help="Device to use for training")
     p.add_argument("--load_model", type=str, default=None, required=True,
                    help="Location of where the model you want to load is stored")

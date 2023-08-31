@@ -27,7 +27,7 @@ from model import PneumoniaDetectionModel
 
 def parseArgs():
     p = argparse.ArgumentParser()
-    p.add_argument("--data", help="Path to data parent directory", required=True)
+    p.add_argument("--common", help="Path to common parent directory", required=True)
     p.add_argument("--device", default="cuda", help="Device to use for training")
     p.add_argument("--img_size", type=int, default=256, help="Image size to train the model at")
     p.add_argument("--epochs", type=int, default=40, help="Number of epochs to train for")

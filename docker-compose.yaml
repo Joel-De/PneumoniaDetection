@@ -1,0 +1,46 @@
+version: "3.8"
+services:
+  webapp:
+    build:
+      context: ./pneumonia_detection
+      dockerfile: ./Dockerfile
+    ports:
+      - "8003:3000"
+    environment:
+      - REACT_APP_BACKEND_URL=http://localhost:8080/
+  backend_server:
+    build:
+      context: ./
+      dockerfile: ./backend_server/Dockerfile
+      args:
+        buildno: 1
+    environment:
+      - DATABASE_NAME=$DATABASE_NAME
+      - DATABASE_PASSWORD=$DATABASE_PASSWORD
+      - DATABASE_USER=$DATABASE_USER
+      - DATABASE_URL=database
+      - REDIS_URL=redis
+      - REDIS_PORT=$REDIS_PORT
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./backend_server:/app
+      - ./common:/app/common
+    expose:
+      - 8080
+  database:
+    image: postgres
+    restart: always
+    environment:
+      - POSTGRES_PASSWORD=$DATABASE_PASSWORD
+      - POSTGRES_USER=$DATABASE_USER
+#      PGUSER: $DATABASE_USER
+    ports:
+      - "5432:5432"
+  redis:
+    image: 'redis/redis-stack-server'
+    environment:
+      - PORT=$REDIS_PORT
+      - ALLOW_EMPTY_PASSWORD=yes
+    ports:
+      - "6379:6379"

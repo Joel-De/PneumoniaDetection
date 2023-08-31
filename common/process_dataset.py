@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 def parseArgs():
     p = argparse.ArgumentParser()
-    p.add_argument("--data_dir", help="Path to data parent directory of dataset", required=True)
+    p.add_argument("--data_dir", help="Path to common parent directory of dataset", required=True)
     p.add_argument("--output_dir", help="Where to save exported dataset to", required=True)
     args = p.parse_args()
     return args

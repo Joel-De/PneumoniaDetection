@@ -14,21 +14,29 @@
 }
 
 .App-header {
-    background-image: url('./Health_Concerns_Seniors.webp') !important;
+    background-image: url('./health_concerns_seniors.png') !important;
     background-size: 'cover' !important;
     background-repeat: no-repeat !important;
     -moz-background-size: cover;
     -webkit-background-size: cover;
     -o-background-size: cover;
     background-size: cover;
-    height: 800px;
+    
     width: 100%;
-  color: white;
+    height: 900px;
+    /* color: white; */
 }
 
 .App-link {
   color: #61dafb;
 }
+
+
+#boldText{
+    color: #61dafb;
+  }
+
+  
 
 @keyframes App-logo-spin {
   from {

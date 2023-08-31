@@ -6,7 +6,6 @@ opencv-python
 flask==2.2.2
 tqdm==4.64.0
 pillow==9.2.0
-numpy==1.23.1
 gunicorn==20.1.0
 psycopg[binary]
 fastapi
