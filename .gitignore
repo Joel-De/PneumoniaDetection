@@ -87,7 +87,6 @@ celerybeat-schedule
 *.sage.py
 
 # Environments
-.env
 .venv
 env/
 venv/
@@ -119,5 +118,5 @@ dmypy.json
 /tensorboard_runs
 /flask_resources/static/tmp.png
 /RSNADataset
-/data/RSNADataset
-!web-app/static/prod.pth
+/common/RSNADataset
+!backend_server/prod.pth
