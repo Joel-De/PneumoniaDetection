@@ -1,37 +1,40 @@
 "use client";
 import "./App.css";
 
-import { VStack, WrapItem, Container, Card, CardBody } from "@chakra-ui/react";
 import {
-  Spacer,
-  Image,
+  Card,
+  CardBody,
   Center,
+  Container,
+  Image,
   Input,
   InputGroup,
   InputLeftElement,
+  Spacer,
+  VStack,
+  WrapItem,
 } from "@chakra-ui/react";
 
 import { ProductAPI } from "./api_layer";
 
-import { useState, useEffect } from "react";
 import {
-  Box,
-  Flex,
   Avatar,
-  HStack,
-  Text,
-  Progress,
+  Box,
   Button,
+  Flex,
+  HStack,
   Icon,
+  Text,
 } from "@chakra-ui/react";
+import { useEffect, useState } from "react";
 import { AiFillEye, AiOutlineSearch } from "react-icons/ai";
 
-import { GrRefresh } from "react-icons/gr";
 import { BsFillTrashFill } from "react-icons/bs";
+import { GrRefresh } from "react-icons/gr";
 export function PatientView() {
   const [patientData, setPatientData] = useState([]);
   const [cardDisplay, setCardDisplay] = useState(null);
-  const [selectedFile, setSelectedFile] = useState();
+  const [selectedFile, setSelectedFile] = useState(null);
   const [patientProfilePicture, setPatientProfilePicture] = useState();
   const [preview, setPreview] = useState();
   const [diagnosis, setDiagnosis] = useState(-1);
@@ -113,7 +116,7 @@ export function PatientView() {
                   .filter(
                     (patient) =>
                       patient.health_card_number.startsWith(searchBarValue) ||
-                      searchBarValue === ""
+                      searchBarValue === "",
                   )
                   .map((patient) => {
                     return (
@@ -136,16 +139,17 @@ export function PatientView() {
                                   setDiagnosis(-1);
                                   setCardDisplay(patient);
                                   ProductAPI.getPatientProfilePicture(
-                                    patient.health_card_number
+                                    patient.health_card_number,
                                   ).then((res) => {
                                     const base64 = btoa(
-                                        new Uint8Array(res).reduce(
-                                            (data, byte) => data + String.fromCharCode(byte),
-                                            ''
-                                          )
-                                        );
+                                      new Uint8Array(res).reduce(
+                                        (data, byte) =>
+                                          data + String.fromCharCode(byte),
+                                        "",
+                                      ),
+                                    );
                                     setPatientProfilePicture(
-                                      `data:image/png;base64,${base64}`
+                                      `data:image/png;base64,${base64}`,
                                     );
                                   });
                                 }}
@@ -266,12 +270,17 @@ export function PatientView() {
                 </Flex>
 
                 <Flex marginTop="100px">
-                  <Input type="file" name="file" onChange={onSelectFile} />
+                  <Input
+                    type="file"
+                    name="file"
+                    accept="image/*"
+                    onChange={onSelectFile}
+                  />
                   <Button
                     onClick={(e) => {
                       ProductAPI.runDiagnosis(
                         selectedFile.pictureAsFile,
-                        cardDisplay.patient_uuid
+                        cardDisplay.patient_uuid,
                       )
                         .then(function (data) {
                           console.log(data);
@@ -281,6 +290,7 @@ export function PatientView() {
                           console.log(error);
                         });
                     }}
+                    isDisabled={selectedFile === null}
                   >
                     Upload Scan
                   </Button>
@@ -294,7 +304,12 @@ export function PatientView() {
                 <Text fontSize="5xl">Scan Preview</Text>
               </Center>
 
-              <Image width="500px" height="500px" src={preview}></Image>
+              <Image
+                width="500px"
+                height="500px"
+                src={preview}
+                marginTop="20px"
+              ></Image>
               <Center>
                 {diagnosis === 0 && (
                   <Text fontSize="3xl">No Pneumonia detected.</Text>

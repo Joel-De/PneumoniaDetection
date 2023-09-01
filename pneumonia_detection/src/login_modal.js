@@ -1,21 +1,18 @@
 import {
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalFooter,
-  ModalBody,
-  ModalCloseButton,
   Button,
-  useDisclosure,
   Center,
-  VStack,
   Input,
   InputGroup,
   InputRightElement,
-  SlideFade,
-  Collapse,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
   Text,
+  VStack,
 } from "@chakra-ui/react";
 
 import { ProductAPI } from "./api_layer";
@@ -124,7 +121,7 @@ export default function LoginModal({ isOpen, onClose, isSignup, setIsSignup }) {
                       password,
                       firstname,
                       lastname,
-                      city
+                      city,
                     )
                       .then(function (data) {
                         console.log(data);
@@ -160,12 +157,12 @@ export default function LoginModal({ isOpen, onClose, isSignup, setIsSignup }) {
                         if (error.response) {
                           console.log(error.response);
                           if (
-                            error.response.data.message == "Incorrect Username"
+                            error.response.data.message === "Incorrect Username"
                           ) {
                             setIsUsernameInvalid(true);
                             setIsPasswordInvalid(false);
                           } else if (
-                            error.response.data.message == "Incorrect Password"
+                            error.response.data.message === "Incorrect Password"
                           ) {
                             setIsPasswordInvalid(true);
                             setIsUsernameInvalid(false);

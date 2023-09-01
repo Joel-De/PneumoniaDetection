@@ -1,42 +1,28 @@
 "use client";
-import logo from "./logo.svg";
 import "./App.css";
 
 import {
-  VStack,
   AvatarGroup,
-  FormControl,
-  Tabs,
-  TabList,
-  TabPanels,
+  Image,
+  Spacer,
   Tab,
+  TabList,
   TabPanel,
-  FormHelperText,
-  Select,
-  Input,
-  Stack,
-  WrapItem,
+  TabPanels,
+  Tabs,
 } from "@chakra-ui/react";
-import { useNavigate } from "react-router-dom";
-import { Spacer, Image, Center } from "@chakra-ui/react";
-import { ProductAPI } from "./api_layer";
 import { AiOutlineUser } from "react-icons/ai";
+import { useNavigate } from "react-router-dom";
+import { ProductAPI } from "./api_layer";
 
+import { Avatar, Button, Flex, HStack, Icon } from "@chakra-ui/react";
 import { FaDoorOpen } from "react-icons/fa";
-import { Icon } from "@chakra-ui/react";
-import { useState, useEffect } from "react";
-import { Flex, Avatar, HStack, Text, Button } from "@chakra-ui/react";
-
-import { useRef } from "react";
 
 import { IoMdSettings } from "react-icons/io";
-import { AiOutlineUserAdd } from "react-icons/ai";
 
 import { PatientView } from "./patient_view.js";
 
-import { RunDiagnosis } from "./run_diagnosis.js";
-import {AddPatient} from "./add_patient.js";
-
+import { AddPatient } from "./add_patient.js";
 
 function PortalNavbar() {
   const navigate = useNavigate();
@@ -91,8 +77,6 @@ function PortalNavbar() {
 }
 
 export default function DoctorPortal() {
-
-
   return (
     <div>
       <PortalNavbar />
@@ -116,7 +100,7 @@ export default function DoctorPortal() {
 
           <TabPanels>
             <TabPanel>
-              <AddPatient/>
+              <AddPatient />
             </TabPanel>
             <TabPanel widht="100%">
               <PatientView />

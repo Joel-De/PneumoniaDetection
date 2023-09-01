@@ -1,12 +1,12 @@
 "use client";
 import "./App.css";
 
-import { Image, Center } from "@chakra-ui/react";
+import { Center, Image } from "@chakra-ui/react";
 
 import { ProductAPI } from "./api_layer";
 
-import { useState, useEffect } from "react";
-import { HStack, Button } from "@chakra-ui/react";
+import { Button, HStack } from "@chakra-ui/react";
+import { useEffect, useState } from "react";
 
 export function RunDiagnosis() {
   const [patientData, setPatientData] = useState([]);
@@ -67,7 +67,7 @@ export function RunDiagnosis() {
               onClick={(e) => {
                 ProductAPI.runDiagnosis(
                   selectedFile.pictureAsFile,
-                  "0c74da98-053f-4dc9-8980-69e0094adef9"
+                  "0c74da98-053f-4dc9-8980-69e0094adef9",
                 )
                   .then(function (data) {})
                   .catch(function (error) {

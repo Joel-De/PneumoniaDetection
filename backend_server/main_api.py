@@ -1,39 +1,35 @@
 from __future__ import annotations
+
 import argparse
-import uvicorn
-import torch
-
-from model import PneumoniaDetectionModel
-from fastapi import FastAPI, File, UploadFile
-from common.dataset import PneumoniaDetectionDataset
-import logging
-import io
-from PIL import Image
-from typing import Annotated
-from fastapi import FastAPI, Depends, Query, HTTPException
-from pydantic import BaseModel, Field, validator
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from typing import Annotated
-import hashlib
-from fastapi import Depends, FastAPI, HTTPException, status, Cookie
-import database_interface as DBInterface
-from database_interface import Doctor, Diagnosis, Patient
 import asyncio
-import psycopg
 import datetime
-from fastapi import Response
-from pydantic import BaseModel
-from enum import Enum
-from typing import Optional
-from fastapi.responses import JSONResponse
-import uuid
-import redis
-from database_interface import DatabaseError
-from fastapi.middleware.cors import CORSMiddleware
+import hashlib
+import io
 import json
-import constants
+import logging
 import sys
+import uuid
+from enum import Enum
+from typing import Annotated, Optional
 
+
+import psycopg
+import redis
+import torch
+import uvicorn
+from PIL import Image
+from fastapi import Depends, FastAPI, Cookie, Query, Response, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import BaseModel, Field
+
+import constants
+import database_interface as DBInterface
+from common.dataset import PneumoniaDetectionDataset
+from database_interface import DatabaseError
+from database_interface import Doctor, Diagnosis, Patient
+from model import PneumoniaDetectionModel
 
 app = FastAPI()
 
@@ -42,7 +38,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:8003",
         "http://localhost:3000",
-        "http://localhost:8003"
+        "http://localhost:8003",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -59,11 +55,31 @@ class Session(BaseModel):
 
 class APIBodys:
     class Patient(BaseModel):
-        first_name: str = Field (Query(..., description='Select service status'))
-        last_name: str  = Field (Query(..., description='Select service status'))
-        sex: str  = Field (Query(..., description='Select service status'))
-        age: int  = Field (Query(..., description='Select service status'))
-        health_card_number: str  = Field (Query(..., description='Select service status'))
+        first_name: str = Field(
+            Query(
+                ...,
+            )
+        )
+        last_name: str = Field(
+            Query(
+                ...,
+            )
+        )
+        sex: str = Field(
+            Query(
+                ...,
+            )
+        )
+        age: int = Field(
+            Query(
+                ...,
+            )
+        )
+        health_card_number: str = Field(
+            Query(
+                ...,
+            )
+        )
 
     class Doctor(BaseModel):
         username: str
@@ -278,8 +294,9 @@ async def getPatients(sessionID: Annotated[str | None, Cookie()]):
     if isinstance(session := getSession(sessionID), JSONResponse):
         return session
 
-
-    logging.info(f"Fetching all patients for doctor {session.user_info.first_name} {session.user_info.last_name}")
+    logging.info(
+        f"Fetching all patients for doctor {session.user_info.first_name} {session.user_info.last_name}"
+    )
     try:
         patientList = await DBInterface.getAllPatients(session.user_info.doctor_uuid)
         return APIResponse(
@@ -301,13 +318,15 @@ async def getPatients(sessionID: Annotated[str | None, Cookie()]):
 
 
 @app.get("/patient_profile_picture")
-async def getPatientProfilePicture(health_card_number:str, sessionID: Annotated[str | None, Cookie()]):
+async def getPatientProfilePicture(
+    health_card_number: str, sessionID: Annotated[str | None, Cookie()]
+):
     if isinstance(session := getSession(sessionID), JSONResponse):
         return session
 
     try:
         patient = await DBInterface.getPatientProfilePicture(health_card_number)
-        return Response(content = patient, media_type="image/png")
+        return Response(content=patient, media_type="image/png")
 
     except psycopg.errors.UniqueViolation as e:
         return buildResponse(
@@ -317,7 +336,6 @@ async def getPatientProfilePicture(health_card_number:str, sessionID: Annotated[
                 message="Error when fetching patient picture",
             ),
         )
-
 
 
 @app.post("/get_all_diagnosis")
@@ -349,7 +367,9 @@ async def getAllDiagnosis(
 
 @app.post("/add_patient")
 async def addPatient(
-    file: UploadFile,sessionID: Annotated[str | None, Cookie()] , patientData: APIBodys.Patient = Depends()
+    file: UploadFile,
+    sessionID: Annotated[str | None, Cookie()],
+    patientData: APIBodys.Patient = Depends(),
 ):
     # async def addPatient(patientData: APIBodys.Patient, cookie : str):
     if isinstance(session := getSession(sessionID), JSONResponse):
@@ -365,7 +385,7 @@ async def addPatient(
                 age=patientData.age,
                 health_card_number=patientData.health_card_number,
                 creation_date=datetime.datetime.now(),
-                patient_image=await file.read()
+                patient_image=await file.read(),
             )
         )
 

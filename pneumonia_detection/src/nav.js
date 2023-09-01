@@ -1,17 +1,9 @@
 "use client";
 
-import {
-  Flex,
-  Button,
-  Icon,
-  Image,
-  HStack,
-  Spacer,
-  Center,
-} from "@chakra-ui/react";
+import { Button, Flex, HStack, Icon, Spacer } from "@chakra-ui/react";
 import LoginModal from "./login_modal";
 
-import { AiOutlineUserAdd, AiOutlineUser } from "react-icons/ai";
+import { AiOutlineUser, AiOutlineUserAdd } from "react-icons/ai";
 
 export default function NavBar({
   isSignup,

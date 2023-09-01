@@ -1,55 +1,34 @@
 "use client";
-import logo from "./logo.svg";
 import "./App.css";
 
 import {
-  VStack,
-  AvatarGroup,
+  Alert,
+  AlertIcon,
+  Center,
   FormControl,
-  Tabs,
-  TabList,
-  TabPanels,
-  Tab,
-  TabPanel,
   FormHelperText,
-  Select,
   Input,
+  Select,
   Stack,
+  VStack,
   WrapItem,
 } from "@chakra-ui/react";
-import { useNavigate } from "react-router-dom";
-import { Spacer, Image, Center } from "@chakra-ui/react";
 import { ProductAPI } from "./api_layer";
-import { AiOutlineUser } from "react-icons/ai";
 
-import { FaDoorOpen } from "react-icons/fa";
-import { Icon } from "@chakra-ui/react";
-import { useState, useEffect } from "react";
-import { Flex, Avatar, HStack, Text, Button } from "@chakra-ui/react";
+import { Avatar, Button, HStack, Icon, Text } from "@chakra-ui/react";
+import { useState } from "react";
 
-import { useRef } from "react";
-
-import { IoMdSettings } from "react-icons/io";
 import { AiOutlineUserAdd } from "react-icons/ai";
 
-import { PatientView } from "./patient_view.js";
-
-import { RunDiagnosis } from "./run_diagnosis.js";
-
 export function AddPatient() {
-  const navigate = useNavigate();
-
-
-  const ref = useRef(null);
-
   const [sex, setSex] = useState("male");
   const [age, setAge] = useState(0);
   const [firstname, setFirstname] = useState("");
   const [lastname, setLastname] = useState("");
   const [city, setCity] = useState("");
   const [healthCardNumber, setHealthCardNumber] = useState("");
-
-  const [patientProfilePicture, setPatientProfilePicture] = useState();
+  const [addSuccess, setAddSuccess] = useState(false);
+  const [patientProfilePicture, setPatientProfilePicture] = useState(null);
 
   const onSelectFile = (e) => {
     if (!e.target.files || e.target.files.length === 0) {
@@ -63,7 +42,6 @@ export function AddPatient() {
     });
   };
 
-
   return (
     <>
       <Center>
@@ -76,7 +54,7 @@ export function AddPatient() {
                 <Input
                   placeholder="Firstname"
                   onChange={(e) => setFirstname(e.target.value)}
-                  isInvalid={firstname == ""}
+                  isInvalid={firstname === ""}
                 />
                 <FormHelperText>Firstname</FormHelperText>
               </FormControl>
@@ -84,7 +62,7 @@ export function AddPatient() {
                 <Input
                   placeholder="Lastname"
                   onChange={(e) => setLastname(e.target.value)}
-                  isInvalid={lastname == ""}
+                  isInvalid={lastname === ""}
                 />
                 <FormHelperText>Lastname</FormHelperText>
               </FormControl>
@@ -109,15 +87,15 @@ export function AddPatient() {
               <Input
                 placeholder="Age"
                 onChange={(e) => setAge(e.target.value)}
-                isInvalid={isNaN(age) || age == 0}
+                isInvalid={isNaN(age) || age === 0}
               />
               <FormHelperText>Patient age</FormHelperText>
             </FormControl>
-            <FormControl variant="floating"  isRequired>
+            <FormControl variant="floating" isRequired>
               <Input
                 placeholder="City"
                 onChange={(e) => setCity(e.target.value)}
-                isInvalid={city == ""}
+                isInvalid={city === ""}
               />
               <FormHelperText>City / Location</FormHelperText>
             </FormControl>
@@ -127,11 +105,11 @@ export function AddPatient() {
             <Input
               placeholder="Health Card Number"
               onChange={(e) => setHealthCardNumber(e.target.value)}
-              isInvalid={healthCardNumber == ""}
+              isInvalid={healthCardNumber === ""}
             />
             <FormHelperText>Health Card Number</FormHelperText>
           </FormControl>
-          <FormControl variant="floating"  isRequired>
+          <FormControl variant="floating" isRequired>
             <Select onChange={(e) => setSex(e.target.value)}>
               <option value="Male">Male</option>
               <option value="Female">Female</option>
@@ -140,8 +118,13 @@ export function AddPatient() {
             <FormHelperText>Gender</FormHelperText>
           </FormControl>
 
-          <FormControl variant="floating"  isRequired>
-            <Input type="file" name="file" onChange={onSelectFile} />
+          <FormControl variant="floating" isRequired>
+            <Input
+              type="file"
+              name="file"
+              accept="image/*"
+              onChange={onSelectFile}
+            />
             <FormHelperText>Profile Picture</FormHelperText>
           </FormControl>
 
@@ -157,26 +140,37 @@ export function AddPatient() {
                 age,
                 city,
                 healthCardNumber,
-                patientProfilePicture.pictureAsFile
+                patientProfilePicture.pictureAsFile,
               )
                 .then(function (data) {
-                  console.log("asdasdas");
+                  setAddSuccess(true);
+                  setTimeout(() => {
+                    setAddSuccess(false);
+                  }, 3000);
                   console.log(data);
                 })
                 .catch(function (error) {
+                  setAddSuccess(false);
                   console.log(error);
                 });
             }}
             isDisabled={
-              firstname == "" ||
-              lastname == "" ||
+              firstname === "" ||
+              lastname === "" ||
               isNaN(age) ||
-              age == 0 ||
-              city == ""
+              age === 0 ||
+              city === "" ||
+              patientProfilePicture === null
             }
           >
             Add Patient
           </Button>
+          {addSuccess && (
+            <Alert status="success">
+              <AlertIcon />
+              Patient successfully added
+            </Alert>
+          )}
         </VStack>
       </Center>
     </>

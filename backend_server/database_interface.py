@@ -3,6 +3,7 @@ import uuid
 
 import psycopg
 import asyncio
+import sys
 from pydantic import BaseModel
 from psycopg.rows import dict_row
 from typing import Optional
@@ -13,7 +14,7 @@ import constants
 
 class Doctor(BaseModel):
     username: str
-    password: str # this is a hashed password NOT plaintext
+    password: str  # this is a hashed password NOT plaintext
     location: str
     first_name: str
     last_name: str
@@ -29,7 +30,7 @@ class Patient(BaseModel):
     age: int
     health_card_number: str
     patient_uuid: Optional[uuid.UUID] = None
-    patient_image:Optional[bytes]= None
+    patient_image: Optional[bytes] = None
     creation_date: datetime.datetime
 
 
@@ -44,15 +45,14 @@ class Diagnosis(BaseModel):
 def getConnectionString():
     return f"dbname={constants.DATABASE_NAME} user={constants.DATABASE_USER} password={constants.DATABASE_PASSWORD} host={constants.DATABASE_URL}"
 
+
 async def initDB():
     async with await psycopg.AsyncConnection.connect(getConnectionString()) as conn:
         # Open a cursor to perform database operations
         async with conn.cursor() as cur:
             # Execute a command: this creates a new table
 
-
             if 1:
-
                 await cur.execute(
                     """
                 DROP SCHEMA public CASCADE;
@@ -126,9 +126,10 @@ async def removeDoctor(username: str) -> Doctor:
 
 
 async def addDoctor(doctor: Doctor) -> Doctor:
-    async with await psycopg.AsyncConnection.connect(getConnectionString() , row_factory=dict_row) as conn:
+    async with await psycopg.AsyncConnection.connect(
+        getConnectionString(), row_factory=dict_row
+    ) as conn:
         async with conn.cursor() as cur:
-
             await cur.execute(
                 """
                 INSERT INTO users (
@@ -149,11 +150,12 @@ async def addDoctor(doctor: Doctor) -> Doctor:
             await conn.commit()
             return doctor
 
+
 async def getAllPatients(doctor_uuid: uuid.UUID) -> list[Patient]:
-    async with await psycopg.AsyncConnection.connect(getConnectionString() , row_factory=dict_row) as conn:
+    async with await psycopg.AsyncConnection.connect(
+        getConnectionString(), row_factory=dict_row
+    ) as conn:
         async with conn.cursor() as cur:
-
-
             await cur.execute(
                 """
                 SELECT first_name ,
@@ -169,14 +171,10 @@ async def getAllPatients(doctor_uuid: uuid.UUID) -> list[Patient]:
                 (doctor_uuid,),
             )
 
-
             if (queryResults := await cur.fetchall()) is None:
                 return []
 
-            return [Patient.model_validate(queryResult) for queryResult in  queryResults]
-
-
-
+            return [Patient.model_validate(queryResult) for queryResult in queryResults]
 
 
 async def getDoctor(username: str) -> Doctor | None:
@@ -195,7 +193,6 @@ async def getDoctor(username: str) -> Doctor | None:
 
             doctor = Doctor.model_validate(queryResult)
             return doctor
-
 
 
 async def getPatient(healthCardNumber: str) -> Patient:
@@ -231,11 +228,13 @@ async def getPatientProfilePicture(healthCardNumber: str) -> Patient:
             if (queryResult := await cur.fetchone()) is None:
                 return None
 
-            return queryResult['patient_image']
+            return queryResult["patient_image"]
 
 
 async def addPatient(patient: Patient) -> Patient:
-    async with await psycopg.AsyncConnection.connect(getConnectionString(), row_factory=dict_row) as conn:
+    async with await psycopg.AsyncConnection.connect(
+        getConnectionString(), row_factory=dict_row
+    ) as conn:
         async with conn.cursor() as cur:
             await cur.execute(
                 """
@@ -258,8 +257,6 @@ async def addPatient(patient: Patient) -> Patient:
             patient = Patient.model_validate(queryResult)
             await conn.commit()
             return patient
-
-
 
 
 async def addPatientToDoctor(patientUUID: uuid.UUID, doctorUUID: uuid.UUID):
@@ -375,8 +372,8 @@ async def getDiagnosis(
             return diagnosis
 
 
-async def getAllDiagnosis(doctorUUID:uuid.UUID = None, patientUUID:uuid.UUID = None):
-    assert(doctorUUID or patientUUID)
+async def getAllDiagnosis(doctorUUID: uuid.UUID = None, patientUUID: uuid.UUID = None):
+    assert doctorUUID or patientUUID
     async with await psycopg.AsyncConnection.connect(
         getConnectionString(), row_factory=dict_row
     ) as conn:
@@ -386,7 +383,7 @@ async def getAllDiagnosis(doctorUUID:uuid.UUID = None, patientUUID:uuid.UUID = N
                     f"""
                     SELECT * FROM diagnosis WHERE doctor_uuid=%s AND patient_uuid=%s
                     """,
-                    (doctorUUID,patientUUID),
+                    (doctorUUID, patientUUID),
                 )
             elif doctorUUID:
                 await cur.execute(
@@ -406,152 +403,14 @@ async def getAllDiagnosis(doctorUUID:uuid.UUID = None, patientUUID:uuid.UUID = N
             if (queryResults := await cur.fetchall()) is None:
                 return []
 
-            return [Diagnosis.model_validate(queryResult) for queryResult in queryResults]
+            return [
+                Diagnosis.model_validate(queryResult) for queryResult in queryResults
+            ]
 
 
-if __name__ == '__main__':
-
-
-    # For testing purposes
-    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+if __name__ == "__main__":
+    # for windows
+    if sys.platform == "win32":
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
     asyncio.run(initDB())
-    import hashlib
-    print(type(open(r"C:\Github\PneumoniaDetection\confusion_matrix.png", 'rb').read()))
-    doctorToAdd = Doctor(
-        username="Doctor5",
-        password=str(hashlib.sha256(b"test1234").hexdigest()),
-        first_name="Jane",
-        last_name="Doe",
-        patient_ids=[],
-        location="NYC",
-        creation_date=datetime.datetime.now(),
-    )
-
-    asyncio.run(addDoctor(doctorToAdd))
-
-    doctor = asyncio.run(getDoctor("Doctor5"))
-
-    asyncio.run(
-        addPatient(
-            Patient(
-                first_name="John",
-                last_name="Doe",
-                doctor_uuid=doctor.doctor_uuid,
-                sex="Male",
-                age=43,
-                location="NYC",
-                health_card_number="Healthcard1",
-                creation_date=datetime.datetime.now(),
-                patient_image=open(r"C:\Github\PneumoniaDetection\confusion_matrix.png", 'rb').read()
-            )
-        )
-    )
-
-    asyncio.run(
-        addPatient(
-            Patient(
-                first_name="Jane",
-                last_name="Doe",
-                doctor_uuid=doctor.doctor_uuid,
-                sex="Male",
-                age=43,
-                location="NYC",
-                health_card_number="Healthcard14",
-                creation_date=datetime.datetime.now(),
-                patient_image=open(r"C:\Github\PneumoniaDetection\confusion_matrix.png", 'rb').read()
-            )
-        )
-    )
-
-
-    for i in range(10):
-        asyncio.run(
-            addPatient(
-                Patient(
-                    first_name="John",
-                    last_name="Doe",
-                    doctor_uuid=doctor.doctor_uuid,
-                    sex="Male",
-                    age=43,
-                    location="NYC",
-                    health_card_number=f"Healthcard{i}_1",
-                    creation_date=datetime.datetime.now(),
-                    patient_image=open(r"C:\Github\PneumoniaDetection\confusion_matrix.png", 'rb').read()
-                )
-            )
-        )
-
-
-        patient1 = asyncio.run(getPatient(f"Healthcard{i}_1"))
-        asyncio.run(addPatientToDoctor(patient1.patient_uuid, doctor.doctor_uuid))
-
-    patient2 = asyncio.run(getPatient("Healthcard14"))
-    asyncio.run(addPatientToDoctor(patient2.patient_uuid, doctor.doctor_uuid))
-    asyncio.run(removePatientFromDoctor(patient2.patient_uuid, doctor.doctor_uuid))
-
-    # res = asyncio.run(getAllPatients("Doctor5"))
-    # for item in res:
-    #     print(item)
-
-
-
-
-
-
-
-
-    asyncio.run(
-        addDiagnosis(
-            Diagnosis(
-                patient_uuid=patient2.patient_uuid,
-                doctor_uuid=doctor.doctor_uuid,
-                diagnosis=True,
-                creation_date=datetime.datetime.now(),
-            )
-        )
-    )
-
-    asyncio.run(
-        addDiagnosis(
-            Diagnosis(
-                patient_uuid=patient2.patient_uuid,
-                doctor_uuid=doctor.doctor_uuid,
-                diagnosis=True,
-                creation_date=datetime.datetime.now(),
-            )
-        )
-    )
-
-    asyncio.run(
-        addDiagnosis(
-            Diagnosis(
-                patient_uuid=patient2.patient_uuid,
-                doctor_uuid=doctor.doctor_uuid,
-                diagnosis=True,
-                creation_date=datetime.datetime.now(),
-            )
-        )
-    )
-
-
-
-
-    ####
-    res1 = asyncio.run(getDiagnosis(patient2.patient_uuid, uuidTypes.PATIENT))
-    print(res1)
-    res2 = asyncio.run(getDiagnosis(doctor.doctor_uuid, uuidTypes.DOCTOR))
-    print(res2)
-    assert res1 == res2
-    ####
-
-
-    res = asyncio.run(getAllDiagnosis(
-        patient2.patient_uuid
-    ))
-
-    [print(x) for x in res]
-
-    # print(f"Removed {res}")
-
-

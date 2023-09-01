@@ -1,11 +1,8 @@
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
-import { redirect } from "react-router-dom";
 
 const baseURL = `${process.env.REACT_APP_BACKEND_URL}`;
 
 export const api = axios.create({
-  // withCredentials: true,
   baseURL: `${process.env.REACT_APP_BACKEND_URL}`,
 });
 
@@ -16,16 +13,15 @@ const instance = axios.create({
 instance.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response.status == 403) {
+    if (error.response.status === 403) {
       if (window.location.href.includes("portal")) {
         console.log(window.location.href);
         console.log("Invalid credentials detected, redirecting to main page!");
-        // window.location.href = "/";
       }
     }
 
     throw error;
-  }
+  },
 );
 
 export const ProductAPI = {
@@ -39,7 +35,7 @@ export const ProductAPI = {
         headers: {
           "Content-Type": "multipart/form-data",
         },
-      }
+      },
     );
 
     return response.data;
@@ -59,20 +55,12 @@ export const ProductAPI = {
     age,
     city,
     healthCardNumber,
-    file
+    file,
   ) {
     console.log("Adding patient to doctor");
 
     var formData = new FormData();
     formData.append("file", file);
-
-    // formData.append("first_name", file);
-    // formData.append("last_name", lastname);
-    // formData.append("sex", sex);
-    // formData.append("age", Number(age));
-    // formData.append("city", city);
-    // formData.append("health_card_number", healthCardNumber);
-
     const response = await instance.post(`${baseURL}add_patient`, formData, {
       params: {
         first_name: firstname,
@@ -94,7 +82,7 @@ export const ProductAPI = {
     password,
     firstname,
     lastname,
-    city
+    city,
   ) {
     console.log("Created account");
 
@@ -129,7 +117,7 @@ export const ProductAPI = {
           Accept: "application/json",
           "Content-Type": "multipart/form-data",
         },
-      }
+      },
     );
     return response.data;
   },
@@ -150,6 +138,3 @@ export const ProductAPI = {
     return response.data;
   },
 };
-
-// defining the cancel API object for ProductAPI
-// const cancelApiObject = defineCancelApiObject(ProductAPI)
