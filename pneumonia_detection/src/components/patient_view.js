@@ -1,5 +1,5 @@
 "use client";
-import "./App.css";
+import "../App.css";
 
 import {
   Card,
@@ -15,7 +15,7 @@ import {
   WrapItem,
 } from "@chakra-ui/react";
 
-import { ProductAPI } from "./api_layer";
+import { ProductAPI } from "../api_layer";
 
 import {
   Avatar,

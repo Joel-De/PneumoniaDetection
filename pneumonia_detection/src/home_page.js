@@ -24,7 +24,7 @@ import {
   useDisclosure,
 } from "@chakra-ui/react";
 
-import NavBar from "./nav.js";
+import NavBar from "./components/nav.js";
 
 export default function HomePage() {
   const [isSignup, setIsSignup] = useState(false);

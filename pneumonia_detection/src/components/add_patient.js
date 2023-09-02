@@ -1,5 +1,5 @@
 "use client";
-import "./App.css";
+import "../App.css";
 
 import {
   Alert,
@@ -13,7 +13,7 @@ import {
   VStack,
   WrapItem,
 } from "@chakra-ui/react";
-import { ProductAPI } from "./api_layer";
+import { ProductAPI } from "../api_layer";
 
 import { Avatar, Button, HStack, Icon, Text } from "@chakra-ui/react";
 import { useState } from "react";

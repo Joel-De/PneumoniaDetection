@@ -15,7 +15,7 @@ import {
   VStack,
 } from "@chakra-ui/react";
 
-import { ProductAPI } from "./api_layer";
+import { ProductAPI } from "../api_layer";
 
 import { useState } from "react";
 import { Link } from "react-router-dom";

@@ -20,9 +20,9 @@ import { FaDoorOpen } from "react-icons/fa";
 
 import { IoMdSettings } from "react-icons/io";
 
-import { PatientView } from "./patient_view.js";
+import { PatientView } from "./components/patient_view.js";
 
-import { AddPatient } from "./add_patient.js";
+import { AddPatient } from "./components/add_patient.js";
 
 function PortalNavbar() {
   const navigate = useNavigate();
@@ -85,9 +85,6 @@ export default function DoctorPortal() {
         minWidth="max-content"
         alignItems="center"
         gap="4"
-        //width="75%"
-        // height="80px"
-        // bgColor="#D9D9D9"
         marginTop="50px"
         marginLeft="10%"
         marginRight="10%"
