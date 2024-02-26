@@ -5,7 +5,7 @@ services:
       context: ./pneumonia_detection
       dockerfile: ./Dockerfile
     ports:
-      - "8003:3000"
+      - "$WEB_APP_PORT:3000"
     environment:
       - REACT_APP_BACKEND_URL=http://localhost:8080/
   backend_server:
